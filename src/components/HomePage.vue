@@ -15,22 +15,22 @@
       <div class="stats-container">
         <div class="stat-card">
           <div class="stat-icon">👤</div>
-          <div class="stat-value">175</div>
+          <div class="stat-value">{{ stats.totalDosen }}</div>
           <div class="stat-label">Jumlah Dosen</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon">📁</div>
-          <div class="stat-value">1.500</div>
+          <div class="stat-value">{{ stats.totalPublikasi.toLocaleString('id-ID') }}</div>
           <div class="stat-label">Total Publikasi</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon">📊</div>
-          <div class="stat-value">10.670</div>
+          <div class="stat-value">{{ stats.totalSitasi.toLocaleString('id-ID') }}</div>
           <div class="stat-label">Total Sitasi</div>
         </div>
         <div class="stat-card">
           <div class="stat-icon">📅</div>
-          <div class="stat-value">2025</div>
+          <div class="stat-value">{{ stats.tahunTerakhir }}</div>
           <div class="stat-label">Tahun Publikasi Terakhir</div>
         </div>
       </div>
@@ -48,7 +48,8 @@
     <!-- Berita Section -->
     <section class="berita-section">
       <h2>BERITA</h2>
-      <div class="berita-carousel">
+      <div v-if="beritaList.length === 0" class="loading-message">📚 Memuat berita...</div>
+      <div v-else class="berita-carousel">
         <button class="carousel-btn prev" @click="prevSlide">‹</button>
         <div class="carousel-container">
           <div class="carousel-wrapper" :style="{ transform: `translateX(-${currentSlide * 100}%)` }">
@@ -61,71 +62,55 @@
         </div>
         <button class="carousel-btn next" @click="nextSlide">›</button>
       </div>
-      <div class="see-all">See All ></div>
+      <router-link to="/berita" class="see-all">See All ></router-link>
     </section>
 
     <!-- Rekap Publikasi Section -->
     <section class="rekap-section">
       <h2>REKAP PUBLIKASI DOSEN FASILKOM UNIVERSITAS MERCU BUANA</h2>
-      <div class="rekap-grid">
+      
+      <!-- Loading State -->
+      <LoadingState v-if="loading" message="⏳ Memuat data analisis..." />
+      
+      <!-- Error State -->
+      <ErrorState 
+        v-else-if="error" 
+        :title="'Gagal Memuat Data'"
+        :message="error"
+      />
+      
+      <!-- Content -->
+      <div v-else class="rekap-grid">
         <!-- Chart 1: Tren Publikasi per Tahun -->
         <div class="rekap-card">
           <h3>Tren Publikasi per Tahun</h3>
-          <div class="chart-placeholder">
-            <svg viewBox="0 0 400 200" class="simple-chart">
-              <polyline points="20,180 60,160 100,140 140,130 180,120 220,110 260,100 300,90 340,80" 
-                        fill="none" stroke="#0d8aee" stroke-width="2"/>
-              <circle cx="20" cy="180" r="3" fill="#0d8aee"/>
-              <circle cx="60" cy="160" r="3" fill="#0d8aee"/>
-              <circle cx="100" cy="140" r="3" fill="#0d8aee"/>
-              <circle cx="140" cy="130" r="3" fill="#0d8aee"/>
-              <circle cx="180" cy="120" r="3" fill="#0d8aee"/>
-              <circle cx="220" cy="110" r="3" fill="#0d8aee"/>
-              <circle cx="260" cy="100" r="3" fill="#0d8aee"/>
-              <circle cx="300" cy="90" r="3" fill="#0d8aee"/>
-              <circle cx="340" cy="80" r="3" fill="#0d8aee"/>
-              <text x="10" y="195" font-size="12">2015</text>
-              <text x="320" y="195" font-size="12">2023</text>
-            </svg>
+          <div class="chart-container">
+            <canvas ref="trendChart" style="max-height: 250px;"></canvas>
           </div>
-          <button class="lihat-btn">LIHAT DATA PUBLIKASI</button>
+          <router-link to="/data-publikasi" class="lihat-btn">LIHAT DATA PUBLIKASI</router-link>
         </div>
 
-        <!-- Chart 2: Topik Riset -->
-        <div class="rekap-card">
-          <h3>Topik Riset</h3>
-          <div class="wordcloud-placeholder">
-            <div class="word-item large">AI</div>
-            <div class="word-item medium">Machine Learning</div>
-            <div class="word-item small">Deep Learning</div>
-            <div class="word-item medium">Learning</div>
-            <div class="word-item small">Metode Penelitian</div>
-            <div class="word-item tiny">Informasi</div>
-            <div class="word-item small">Database</div>
-          </div>
-        </div>
-
-        <!-- Top Dosen by Publikasi -->
+        <!-- Chart 2: Top Dosen by Publikasi -->
         <div class="rekap-card stats-card-dark">
           <h3>5 DOSEN DENGAN PUBLIKASI TERBANYAK</h3>
           <ul class="top-list">
-            <li><span class="rank">1.</span> <span class="name">Emi Kaburusin</span> <span class="count">40</span></li>
-            <li><span class="rank">2.</span> <span class="name">Hayfa Samtosso</span> <span class="count">35</span></li>
-            <li><span class="rank">3.</span> <span class="name">Wirawan Gunawan</span> <span class="count">28</span></li>
-            <li><span class="rank">4.</span> <span class="name">Alfyadi</span> <span class="count">24</span></li>
-            <li><span class="rank">5.</span> <span class="name">Biyadi</span> <span class="count">18</span></li>
+            <li v-for="(dosen, idx) in topDosenPublikasi" :key="idx">
+              <span class="rank">{{ idx + 1 }}.</span> 
+              <span class="name">{{ dosen.nama_dosen }}</span> 
+              <span class="count">{{ dosen.publications_count || 0 }}</span>
+            </li>
           </ul>
         </div>
 
-        <!-- Top Dosen by Sitasi -->
+        <!-- Chart 3: Top Dosen by Sitasi -->
         <div class="rekap-card stats-card-dark">
           <h3>5 DOSEN DENGAN SITASI TERBANYAK</h3>
           <ul class="top-list">
-            <li><span class="rank">1.</span> <span class="name">Alfyadi</span> <span class="count">67</span></li>
-            <li><span class="rank">2.</span> <span class="name">Emi Kaburusin</span> <span class="count">52</span></li>
-            <li><span class="rank">3.</span> <span class="name">Hayfa Samtosso</span> <span class="count">49</span></li>
-            <li><span class="rank">4.</span> <span class="name">Wirawan Gunawan</span> <span class="count">42</span></li>
-            <li><span class="rank">5.</span> <span class="name">Biyadi</span> <span class="count">38</span></li>
+            <li v-for="(dosen, idx) in topDosenSitasi" :key="idx">
+              <span class="rank">{{ idx + 1 }}.</span> 
+              <span class="name">{{ dosen.nama_dosen }}</span> 
+              <span class="count">{{ dosen.total_sitasi || 0 }}</span>
+            </li>
           </ul>
         </div>
       </div>
@@ -146,8 +131,14 @@
           </div>
         </div>
         <div class="contact-map">
-          <img src="" alt="Map" class="map-image">
-          <p class="alamat-label">Alamat Kantor:</p>
+          <p class="alamat-label">Lokasi Universitas Mercu Buana:</p>
+          <iframe 
+            src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d1983.202272674759!2d106.73740077017727!3d-6.210254569484226!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e69f71f5a41c197%3A0x628259f9e8d6d7b4!2sUniversitas%20Mercu%20Buana!5e0!3m2!1sen!2sus!4v1765214996624!5m2!1sen!2sus" 
+            allowfullscreen="" 
+            loading="lazy" 
+            referrerpolicy="no-referrer-when-downgrade">
+          </iframe>
+          <p class="alamat-text">Jl. Meruya Selatan, Kembangan, Jakarta Barat 11650, Indonesia</p>
         </div>
       </div>
     </section>
@@ -155,32 +146,159 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
+import { apiClient } from '../config/apiConfig';
+import { dashboardAPI } from '../api/dashboardAPI';
+import { newsAPI } from '../api/newsAPI';
+import LoadingState from './LoadingState.vue';
+import ErrorState from './ErrorState.vue';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+
+// Register Chart.js components
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
 const currentSlide = ref(0);
+const loading = ref(false);
+const error = ref(null);
 
-const beritaList = ref([
-  {
-    tag: 'Pencapaian',
-    title: 'Milestone 400+ Publikasi Tercapai',
-    description: 'Fasilkom Ilmu Komputer Universitas Mercu Buana, Sumit ingin mencapai 400 Publikasi di Google Scholar.'
-  },
-  {
-    tag: 'Publikasi Baru',
-    title: '20 PUBLIKASI BARU TELAH DITAMBAHKAN',
-    description: 'Data publikasi terbaru dari Google Scholar telah disiarkan untuk periode November-2025.'
-  },
-  {
-    tag: 'Pencapaian',
-    title: 'Topik Deep Learning Meningkat Pesat',
-    description: 'Riset di bidang AI dan Deep Learning telah menunjukkan peningkatan signifikan dalam publikasi terkini.'
-  },
-  {
-    tag: 'Pencapaian',
-    title: 'Kolaborasi Internasional Berkembang',
-    description: 'Dosen Fasilkom UMB terus memperluas jaringan penelitian dengan institusi internasional terkemuka.'
+// Dashboard Stats
+const stats = ref({
+  totalDosen: 0,
+  totalPublikasi: 0,
+  totalSitasi: 0,
+  tahunTerakhir: new Date().getFullYear()
+});
+
+// News/Berita data
+const beritaList = ref([]);
+
+// Analytics data for rekap section
+const trendData = ref({ labels: [], values: [] });
+const topDosenPublikasi = ref([]);
+const topDosenSitasi = ref([]);
+
+// Chart references
+const trendChart = ref(null);
+let trendChartInstance = null;
+
+// Fetch dashboard data
+const fetchDashboardData = async () => {
+  try {
+    console.log('🔵 Fetching dashboard data...');
+    const data = await dashboardAPI.getDashboardData();
+    
+    console.log('✅ Dashboard data loaded:', data);
+    
+    // Update stats
+    stats.value = {
+      totalDosen: data.jumlah_dosen || 0,
+      totalPublikasi: data.total_publikasi || 0,
+      totalSitasi: data.total_sitasi || 0,
+      tahunTerakhir: data.tahun_terakhir || new Date().getFullYear()
+    };
+    
+    // Extract trend data
+    if (data.tren_publikasi) {
+      trendData.value = {
+        labels: data.tren_publikasi.map(item => item.tahun.toString()),
+        values: data.tren_publikasi.map(item => item.total)
+      };
+    }
+    
+    // Extract top dosen by publikasi
+    if (data.top_dosen_publikasi) {
+      topDosenPublikasi.value = data.top_dosen_publikasi.slice(0, 5);
+    }
+    
+    // Extract top dosen by sitasi
+    if (data.top_dosen_sitasi) {
+      topDosenSitasi.value = data.top_dosen_sitasi.slice(0, 5);
+    }
+  } catch (err) {
+    console.error('❌ Error loading dashboard data:', err);
+    error.value = err.message || 'Gagal memuat data dashboard';
   }
-]);
+};
+
+// Fetch berita from API
+const fetchBerita = async () => {
+  try {
+    console.log('🔵 Fetching news data...');
+    const newsArray = await newsAPI.getAllNews();
+    
+    console.log('✅ News data loaded:', newsArray);
+    
+    // Transform to berita format
+    beritaList.value = newsArray.slice(0, 4).map(item => ({
+      id: item.id,
+      tag: item.tags ? item.tags.split(',')[0] : 'Berita',
+      title: item.judul || item.title,
+      description: item.deskripsi_singkat || item.description
+    }));
+  } catch (err) {
+    console.error('❌ Error loading news:', err);
+    // Use fallback data if API fails
+    beritaList.value = [
+      {
+        tag: 'Pencapaian',
+        title: 'Data Publikasi Terbaru Dimuat',
+        description: 'Platform sedang memuat data publikasi terbaru dari sistem backend.'
+      }
+    ];
+  }
+};
+
+// Initialize trend chart
+const initTrendChart = () => {
+  if (!trendChart.value || trendData.value.labels.length === 0) return;
+  
+  const ctx = trendChart.value.getContext('2d');
+  
+  if (trendChartInstance) {
+    trendChartInstance.destroy();
+  }
+  
+  trendChartInstance = new ChartJS(ctx, {
+    type: 'line',
+    data: {
+      labels: trendData.value.labels,
+      datasets: [{
+        label: 'Tren Publikasi',
+        data: trendData.value.values,
+        borderColor: '#0d8aee',
+        backgroundColor: 'rgba(13, 138, 238, 0.1)',
+        borderWidth: 2,
+        fill: true,
+        tension: 0.4,
+        pointRadius: 5,
+        pointBackgroundColor: '#0d8aee',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {
+          display: true,
+          labels: { color: '#333' }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { color: '#666' },
+          grid: { color: 'rgba(0,0,0,0.1)' }
+        },
+        x: {
+          ticks: { color: '#666' },
+          grid: { color: 'rgba(0,0,0,0.1)' }
+        }
+      }
+    }
+  });
+};
 
 const nextSlide = () => {
   if (currentSlide.value < beritaList.value.length - 1) {
@@ -193,6 +311,22 @@ const prevSlide = () => {
     currentSlide.value--;
   }
 };
+
+// Load data on mount
+onMounted(async () => {
+  loading.value = true;
+  try {
+    await fetchDashboardData();
+    await fetchBerita();
+    
+    // Initialize chart after data is loaded
+    setTimeout(() => {
+      initTrendChart();
+    }, 100);
+  } finally {
+    loading.value = false;
+  }
+});
 </script>
 
 <style scoped>
@@ -441,6 +575,12 @@ const prevSlide = () => {
   color: #999;
   font-size: 0.95rem;
   cursor: pointer;
+  display: block;
+  text-decoration: none;
+}
+
+.see-all:hover {
+  color: #0d8aee;
 }
 
 /* ========== REKAP SECTION ========== */
@@ -487,6 +627,22 @@ const prevSlide = () => {
   align-items: center;
   justify-content: center;
   margin-bottom: 1.5rem;
+}
+
+.chart-container {
+  position: relative;
+  height: 250px;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 3rem 2rem;
+  font-size: 1.1rem;
+  color: #666;
 }
 
 .simple-chart {
@@ -583,6 +739,9 @@ const prevSlide = () => {
   font-size: 0.85rem;
   cursor: pointer;
   transition: background-color 0.3s ease;
+  display: block;
+  text-decoration: none;
+  text-align: center;
 }
 
 .lihat-btn:hover {
@@ -640,11 +799,23 @@ const prevSlide = () => {
 
 .contact-map {
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
+}
+
+.contact-map iframe {
+  width: 100%;
+  height: 200px;
+  border: none !important;
+  border-radius: 8px;
+  display: block;
 }
 
 .map-image {
   width: 100%;
-  height: 200px;
+  height: 250px;
   background-color: #f0f0f0;
   border-radius: 8px;
   object-fit: cover;
@@ -652,9 +823,16 @@ const prevSlide = () => {
 
 .alamat-label {
   margin-top: 1rem;
-  font-size: 0.95rem;
+  font-size: 1rem;
+  color: #000;
+  font-weight: 600;
+}
+
+.alamat-text {
+  margin-top: 1rem;
+  font-size: 0.9rem;
   color: #666;
-  font-weight: 500;
+  line-height: 1.6;
 }
 
 /* ========== RESPONSIVE DESIGN ========== */

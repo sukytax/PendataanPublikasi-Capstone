@@ -54,11 +54,28 @@
           <div class="info-row publikasi-section">
             <span class="info-label">Daftar Publikasi</span>
             <div class="publikasi-list">
-              :
-              <div class="publikasi-items">
-                <div v-for="(pub, index) in dosenData.daftarPublikasi" :key="index" class="publikasi-item">
-                  <p>{{ pub }}</p>
-                </div>
+              <div class="publikasi-table-wrapper">
+                <table class="publikasi-table">
+                  <thead>
+                    <tr>
+                      <th>NO</th>
+                      <th>JUDUL</th>
+                      <th>TAHUN</th>
+                      <th>JUMLAH SITASI</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr v-for="(pub, index) in dosenData.daftarPublikasi" :key="index">
+                      <td>{{ index + 1 }}</td>
+                      <td>{{ pub.judul }}</td>
+                      <td>{{ pub.tahun }}</td>
+                      <td>{{ pub.jumlah_sitasi }}</td>
+                    </tr>
+                    <tr v-if="dosenData.daftarPublikasi.length === 0">
+                      <td colspan="4" class="text-center">Tidak ada publikasi</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -74,9 +91,15 @@
       </div>
 
       <!-- Loading State -->
-      <div v-else class="loading">
-        <p>Memuat data dosen...</p>
-      </div>
+      <LoadingState v-else-if="loading" message="⏳ Memuat data dosen..." />
+
+      <!-- Error State -->
+      <ErrorState 
+        v-else-if="error"
+        :title="'Gagal Memuat Data Dosen'"
+        :message="error"
+        @retry="fetchDosenDetail"
+      />
     </div>
   </div>
 </template>
@@ -84,243 +107,47 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
+import publicationsAPI from '../api/publicationsAPI';
+import LoadingState from './LoadingState.vue';
+import ErrorState from './ErrorState.vue';
 
 const route = useRoute();
 const dosenData = ref(null);
+const loading = ref(false);
+const error = ref(null);
 
-// Sample data untuk dosen
-const dosenDatabase = {
-  'afiyati': {
-    namaDosen: 'Afiyati',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Artificial Intelligence',
-      'Natural Language Processing',
-      'Machine Learning',
-      'Deep Learning'
-    ],
-    totalPenelitian: 19,
-    totalSitasi: 52,
-    hIndex: 12,
-    daftarPublikasi: [
-      'Deep learning for assessing unhealthy lettuce hydroponic using convolutional neural network based on faster R-CNN with inception V2 (Cited: 21, Year: 2020)',
-      'Wireless sensor network design for earthquake\'s and landslide\'s early warnings (Cited: 20, Year: 2018)',
-      'Energy efficiency analysis of TEEN routing protocol with isolated nodes (Cited: 17, Year: 2019)',
-      'Performance analysis of VoIP client with integrated encryption module (Cited: 17, Year: 2013)',
-      'Propose safety engineering concept speed limiter and fatigue control using silfa for truck and bus (Cited: 13, Year: 2020)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
-  },
-  'hakiman': {
-    namaDosen: 'Hakiman',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Software Engineering',
-      'Web Development',
-      'Mobile Applications'
-    ],
-    totalPenelitian: 28,
-    totalSitasi: 95,
-    hIndex: 16,
-    daftarPublikasi: [
-      'Responsive web design patterns (Cited: 22, Year: 2021)',
-      'Mobile application development best practices (Cited: 18, Year: 2020)',
-      'Software architecture for scalability (Cited: 15, Year: 2019)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
-  },
-  'wirawan-gunawan': {
-    namaDosen: 'Wirawan Gunawan',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Network Security',
-      'Cryptography',
-      'Information Security'
-    ],
-    totalPenelitian: 22,
-    totalSitasi: 65,
-    hIndex: 11,
-    daftarPublikasi: [
-      'Advanced encryption methods for IoT devices (Cited: 19, Year: 2021)',
-      'Vulnerability assessment in network infrastructure (Cited: 14, Year: 2020)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
-  },
-  'supriadi': {
-    namaDosen: 'Supriadi',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Database Design',
-      'Data Mining',
-      'Business Intelligence'
-    ],
-    totalPenelitian: 32,
-    totalSitasi: 108,
-    hIndex: 18,
-    daftarPublikasi: [
-      'Data warehouse design for enterprise (Cited: 25, Year: 2021)',
-      'Machine learning in data mining (Cited: 20, Year: 2020)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
-  },
-  'hayfa-samtosso': {
-    namaDosen: 'Hayfa Samtosso',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Artificial Intelligence',
-      'Robotics',
-      'Computer Vision'
-    ],
-    totalPenelitian: 26,
-    totalSitasi: 78,
-    hIndex: 14,
-    daftarPublikasi: [
-      'Computer vision applications in robotics (Cited: 17, Year: 2021)',
-      'AI-based image recognition systems (Cited: 14, Year: 2020)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
-  },
-  'budi-santoso': {
-    namaDosen: 'Budi Santoso',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Network Programming',
-      'Distributed Systems',
-      'Cloud Architecture'
-    ],
-    totalPenelitian: 24,
-    totalSitasi: 72,
-    hIndex: 13,
-    daftarPublikasi: [
-      'Cloud computing architecture (Cited: 16, Year: 2021)',
-      'Distributed system design patterns (Cited: 12, Year: 2020)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
-  },
-  'siti-nurhaliza': {
-    namaDosen: 'Siti Nurhaliza',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Human Computer Interaction',
-      'User Experience',
-      'Usability Testing'
-    ],
-    totalPenelitian: 20,
-    totalSitasi: 58,
-    hIndex: 10,
-    daftarPublikasi: [
-      'User interface design principles (Cited: 13, Year: 2021)',
-      'Usability testing methodologies (Cited: 10, Year: 2020)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
-  },
-  'ahmad-hermawan': {
-    namaDosen: 'Ahmad Hermawan',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Compiler Design',
-      'Programming Languages',
-      'Code Optimization'
-    ],
-    totalPenelitian: 30,
-    totalSitasi: 102,
-    hIndex: 17,
-    daftarPublikasi: [
-      'Advanced compiler techniques (Cited: 23, Year: 2021)',
-      'Language design and implementation (Cited: 18, Year: 2020)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
-  },
-  'ratna-sari': {
-    namaDosen: 'Ratna Sari',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Information Retrieval',
-      'Text Mining',
-      'Natural Language Processing'
-    ],
-    totalPenelitian: 25,
-    totalSitasi: 82,
-    hIndex: 15,
-    daftarPublikasi: [
-      'Text mining applications (Cited: 19, Year: 2021)',
-      'Information retrieval systems (Cited: 14, Year: 2020)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
-  },
-  'bambang-suryanto': {
-    namaDosen: 'Bambang Suryanto',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Multimedia Systems',
-      'Video Processing',
-      'Graphics Programming'
-    ],
-    totalPenelitian: 23,
-    totalSitasi: 68,
-    hIndex: 12,
-    daftarPublikasi: [
-      'Video compression techniques (Cited: 15, Year: 2021)',
-      'Real-time graphics rendering (Cited: 11, Year: 2020)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
-  },
-  'dwi-prabowo': {
-    namaDosen: 'Dwi Prabowo',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Internet of Things',
-      'Embedded Systems',
-      'Sensor Networks'
-    ],
-    totalPenelitian: 29,
-    totalSitasi: 98,
-    hIndex: 16,
-    daftarPublikasi: [
-      'IoT protocol design (Cited: 21, Year: 2021)',
-      'Embedded system optimization (Cited: 16, Year: 2020)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
-  },
-  'endang-supriyanto': {
-    namaDosen: 'Endang Supriyanto',
-    afiliasi: 'Universitas Mercu Buana',
-    bidangKeilmuan: [
-      'Software Testing',
-      'Quality Assurance',
-      'DevOps'
-    ],
-    totalPenelitian: 27,
-    totalSitasi: 89,
-    hIndex: 15,
-    daftarPublikasi: [
-      'Automated testing frameworks (Cited: 20, Year: 2021)',
-      'Quality assurance best practices (Cited: 15, Year: 2020)'
-    ],
-    linkProfile: 'https://scholar.google.com',
-    linkProfileText: 'Klik Di Sini'
+// Fetch detail dosen dari API
+const fetchDosenDetail = async () => {
+  loading.value = true;
+  error.value = null;
+
+  try {
+    console.log('🔵 Fetching dosen detail...');
+    
+    // Get ID dari route params
+    const dosenId = route.params.id;
+    
+    if (!dosenId) {
+      throw new Error('ID dosen tidak ditemukan');
+    }
+
+    // Fetch data dari API
+    const rawData = await publicationsAPI.getPublicationDetail(dosenId);
+    
+    // Transform data
+    dosenData.value = publicationsAPI.transformDetailData(rawData);
+    
+    console.log('✅ Dosen detail loaded:', dosenData.value);
+  } catch (err) {
+    error.value = err.message || 'Gagal memuat data dosen';
+    console.error('❌ Failed to fetch dosen detail:', err);
+  } finally {
+    loading.value = false;
   }
 };
 
 onMounted(() => {
-  // Get dosen ID from route params
-  const dosenId = route.params.id || 'afiyati';
-  
-  // Simulate API call delay
-  setTimeout(() => {
-    dosenData.value = dosenDatabase[dosenId] || dosenDatabase['afiyati'];
-  }, 300);
+  fetchDosenDetail();
 });
 </script>
 
@@ -457,6 +284,51 @@ onMounted(() => {
   display: flex;
   gap: 0.5rem;
   width: 100%;
+}
+
+.publikasi-table-wrapper {
+  flex: 1;
+  overflow-x: auto;
+  border-radius: 4px;
+  border: 1px solid #ddd;
+}
+
+.publikasi-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.publikasi-table thead {
+  background-color: #0e3b63;
+  color: white;
+}
+
+.publikasi-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  letter-spacing: 0.5px;
+}
+
+.publikasi-table td {
+  padding: 1rem;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.publikasi-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.publikasi-table tbody tr:hover {
+  background-color: #f9f9f9;
+}
+
+.publikasi-table .text-center {
+  text-align: center;
+  color: #999;
 }
 
 .publikasi-items {

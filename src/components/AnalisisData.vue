@@ -2,8 +2,21 @@
   <div class="analisis-container">
     <h1 class="page-title">ANALISIS PUBLIKASI DOSEN FASILKOM</h1>
 
-    <!-- Statistics Cards -->
-    <div class="stats-grid">
+    <!-- Loading State -->
+    <LoadingState v-if="loading" message="⏳ Memuat data analisis..." />
+
+    <!-- Error State -->
+    <ErrorState 
+      v-else-if="error" 
+      :title="'Gagal Memuat Data'"
+      :message="error"
+      @retry="fetchAnalysisData"
+    />
+
+    <!-- Data State -->
+    <div v-else>
+      <!-- Statistics Cards -->
+      <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon blue">
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
@@ -56,12 +69,12 @@
     <!-- Charts Row 1 -->
     <div class="charts-row">
       <div class="chart-card">
-        <h2 class="chart-title">Distribusi Publikasi per Program Studi</h2>
+        <h2 class="chart-title">Top 5 Dosen Paling Produktif</h2>
         <canvas ref="programStudiChart"></canvas>
       </div>
 
       <div class="chart-card">
-        <h2 class="chart-title">Tren Publikasi 5 Tahun Terakhir</h2>
+        <h2 class="chart-title">Tren Publikasi Dari Tahun ke Tahun</h2>
         <canvas ref="trendChart"></canvas>
       </div>
     </div>
@@ -69,13 +82,8 @@
     <!-- Charts Row 2 -->
     <div class="charts-row">
       <div class="chart-card">
-        <h2 class="chart-title">Distribusi Sitasi Publikasi</h2>
+        <h2 class="chart-title">Top 5 Dosen Dengan Sitasi Tertinggi</h2>
         <canvas ref="sitasiChart"></canvas>
-      </div>
-
-      <div class="chart-card">
-        <h2 class="chart-title">Jenis Publikasi</h2>
-        <canvas ref="jenisPublikasiChart"></canvas>
       </div>
     </div>
 
@@ -104,142 +112,219 @@
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
 <script>
 import { Chart, registerables } from 'chart.js';
+import dashboardAPI from '../api/dashboardAPI';
+import LoadingState from './LoadingState.vue';
+import ErrorState from './ErrorState.vue';
 
 Chart.register(...registerables);
 
 export default {
   name: 'AnalisisData',
+  components: {
+    LoadingState,
+    ErrorState
+  },
   data() {
     return {
+      loading: false,
+      error: null,
+      
       // Data statistik - akan diambil dari API
       stats: {
-        totalDosen: 175,
-        totalPublikasi: 1500,
-        totalSitasi: 10670,
+        totalDosen: 20,
+        totalPublikasi: 183,
+        totalSitasi: 8373,
         tahunTerakhir: 2025
       },
       
       // Data insights - akan diambil dari API
       insights: {
-        pertumbuhanPublikasi: 'Publikasi meningkat 30.2% dibanding tahun lalu, dengan pertumbuhan tertinggi di bidang Artificial Intelligence dan Data Science.',
-        dampakSitasi: '42.2% publikasi memiliki sitasi di atas 10, menunjukkan dampak riset yang signifikan di komunitas akademik.',
-        dominasiProgramStudi: 'Teknik Informatika menghasilkan 57.8% total publikasi Fasilkom, dengan fokus riset pada Machine Learning dan IoT.',
-        jangkauanInternasional: '35.6% publikasi terbit di jurnal terindeks Scopus, menandakan peningkatan kualitas dan visibilitas riset.'
+        pertumbuhanPublikasi: 'Publikasi mencapai 183 dengan 20 dosen aktif di 20 topik riset.',
+        dampakSitasi: 'Total sitasi mencapai 8373, menunjukkan dampak riset yang signifikan dengan rata-rata 418 sitasi per dosen.',
+        dominasiProgramStudi: 'Dosen terprodukstif adalah Siti Choiriah dengan 10 publikasi.',
+        jangkauanInternasional: 'Dosen dengan sitasi tertinggi adalah Sharryn Kasmir dengan 1742 sitasi.'
       },
 
       // Data untuk charts - akan diambil dari API
       programStudiData: {
-        labels: ['Teknik Informatika', 'Sistem Informasi'],
-        values: [58, 42]
+        labels: ['Siti Choiriah', 'Heri Budianto', 'Adizty Suparno', 'Swarmilah Hariani., M.Acc.,Ph.D', 'Ratna Mappanyuki'],
+        values: [10, 10, 10, 10, 10]
       },
 
       trendData: {
-        labels: ['2019', '2020', '2021', '2022', '2023'],
-        values: [150, 170, 195, 210, 270]
+        labels: ['1996', '1999', '2007', '2008', '2011', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'],
+        values: [1, 1, 3, 2, 2, 3, 6, 8, 9, 10, 12, 17, 32, 22, 15, 19, 8, 13]
       },
 
       sitasiData: {
-        labels: ['0-10 Sitasi', '11-50 Sitasi', '51-100 Sitasi', '100+ Sitasi'],
-        values: [320, 340, 210, 130]
-      },
-
-      jenisPublikasiData: {
-        labels: ['Sinta 1', 'Sinta 2', 'Scopus', 'Sinta 3'],
-        values: [35, 25, 25, 15]
+        labels: ['Sharryn Kasmir', 'Dr. Agus Arijanto,SE,MM', 'Adi Nurmahdi', 'Hari Setiyawati', 'Heri Budianto'],
+        values: [1742, 1257, 699, 597, 506]
       }
     };
   },
 
   mounted() {
-    // Inisialisasi semua chart setelah component di-mount
-    this.initProgramStudiChart();
-    this.initTrendChart();
-    this.initSitasiChart();
-    this.initJenisPublikasiChart();
-
-    // TODO: Uncomment ketika API sudah siap
-    // this.fetchAnalysisData();
+    // Fetch data dari API
+    this.fetchAnalysisData();
+    
+    // Fallback: initialize charts dengan default data setelah delay
+    setTimeout(() => {
+      if (!this.loading && !this.error) {
+        console.log('📊 Initializing charts with current data');
+        this.initAllCharts();
+      }
+    }, 500);
   },
 
   methods: {
-    // Method untuk fetch data dari Laravel API
+    // Method untuk fetch data dari API
     async fetchAnalysisData() {
+      this.loading = true;
+      this.error = null;
+
       try {
-        // Ganti dengan URL API Laravel Anda
-        const response = await fetch('http://your-laravel-api.test/api/analysis');
-        const data = await response.json();
+        console.log('🔵 Fetching dashboard data...');
+        
+        // Fetch data dari API
+        const rawData = await dashboardAPI.getDashboardData();
+        console.log('📥 Raw API response:', rawData);
+        
+        // Transform data
+        const transformedData = dashboardAPI.transformDashboardData(rawData);
+        console.log('📊 Transformed data:', transformedData);
+        
+        // Update all data
+        this.stats = transformedData.stats;
+        this.trendData = transformedData.trendData;
+        this.programStudiData = transformedData.programStudiData;
+        this.sitasiData = transformedData.sitasiData;
+        this.insights = transformedData.insights;
+        
+        console.log('✅ Data assigned to component:', {
+          stats: this.stats,
+          trendData: this.trendData,
+          programStudiData: this.programStudiData,
+          sitasiData: this.sitasiData
+        });
+        
+        // Inisialisasi semua chart setelah data di-load dan DOM siap
+        this.$nextTick(() => {
+          console.log('🎨 Initializing charts...');
+          // Add delay untuk ensure DOM fully rendered
+          setTimeout(() => {
+            this.initAllCharts();
+          }, 100);
+        });
+      } catch (err) {
+        this.error = err.message || 'Gagal memuat data dashboard';
+        console.error('❌ Failed to fetch dashboard data:', err);
+        console.error('📋 Error details:', err);
+      } finally {
+        this.loading = false;
+      }
+    },
 
-        // Update data dari API
-        this.stats = data.stats;
-        this.insights = data.insights;
-        this.programStudiData = data.programStudi;
-        this.trendData = data.trend;
-        this.sitasiData = data.sitasi;
-        this.jenisPublikasiData = data.jenisPublikasi;
-
-        // Update semua chart dengan data baru
-        this.updateAllCharts();
+    initAllCharts() {
+      // Inisialisasi semua chart dengan null checks
+      try {
+        console.log('🔍 Checking canvas refs:', {
+          programStudiChart: !!this.$refs.programStudiChart,
+          trendChart: !!this.$refs.trendChart,
+          sitasiChart: !!this.$refs.sitasiChart
+        });
+        
+        console.log('📌 Current data:', {
+          programStudiData: this.programStudiData,
+          trendData: this.trendData,
+          sitasiData: this.sitasiData
+        });
+        
+        if (this.$refs.programStudiChart) {
+          console.log('✨ Initializing programStudiChart');
+          this.initProgramStudiChart();
+        } else {
+          console.warn('⚠️ programStudiChart ref not found');
+        }
+        
+        if (this.$refs.trendChart) {
+          console.log('✨ Initializing trendChart');
+          this.initTrendChart();
+        } else {
+          console.warn('⚠️ trendChart ref not found');
+        }
+        
+        if (this.$refs.sitasiChart) {
+          console.log('✨ Initializing sitasiChart');
+          this.initSitasiChart();
+        } else {
+          console.warn('⚠️ sitasiChart ref not found');
+        }
       } catch (error) {
-        console.error('Error fetching analysis data:', error);
+        console.error('❌ Error initializing charts:', error);
       }
     },
 
     initProgramStudiChart() {
-      const ctx = this.$refs.programStudiChart.getContext('2d');
+      const canvasElement = this.$refs.programStudiChart;
+      if (!canvasElement) {
+        console.warn('⚠️ Program Studi canvas not found');
+        return;
+      }
+      
+      console.log('📊 programStudiChart data:', {
+        labels: this.programStudiData.labels,
+        values: this.programStudiData.values
+      });
+      
+      const ctx = canvasElement.getContext('2d');
       this.programStudiChart = new Chart(ctx, {
-        type: 'pie',
+        type: 'bar',
         data: {
           labels: this.programStudiData.labels,
           datasets: [{
+            label: 'Jumlah Publikasi',
             data: this.programStudiData.values,
-            backgroundColor: ['#1e5a6e', '#f4c542'],
-            borderWidth: 0
+            backgroundColor: '#1e5a6e',
+            borderRadius: 4
           }]
         },
         options: {
+          indexAxis: 'y',
           responsive: true,
           maintainAspectRatio: true,
+          scales: {
+            x: {
+              beginAtZero: true,
+              ticks: {
+                stepSize: 2
+              }
+            }
+          },
           plugins: {
             legend: {
-              position: 'bottom',
-              labels: {
-                padding: 15,
-                font: {
-                  size: 12
-                },
-                generateLabels: (chart) => {
-                  const data = chart.data;
-                  return data.labels.map((label, i) => {
-                    const value = data.datasets[0].data[i];
-                    return {
-                      text: `${label} ${value}%`,
-                      fillStyle: data.datasets[0].backgroundColor[i],
-                      hidden: false,
-                      index: i
-                    };
-                  });
-                }
-              }
-            },
-            tooltip: {
-              callbacks: {
-                label: (context) => {
-                  return `${context.label}: ${context.parsed}%`;
-                }
-              }
+              display: false
             }
           }
         }
       });
+      
+      console.log('✅ programStudiChart initialized');
     },
 
     initTrendChart() {
-      const ctx = this.$refs.trendChart.getContext('2d');
+      const canvasElement = this.$refs.trendChart;
+      if (!canvasElement) {
+        console.warn('⚠️ Trend chart canvas not found');
+        return;
+      }
+      
+      const ctx = canvasElement.getContext('2d');
       this.trendChart = new Chart(ctx, {
         type: 'bar',
         data: {
@@ -272,13 +357,19 @@ export default {
     },
 
     initSitasiChart() {
-      const ctx = this.$refs.sitasiChart.getContext('2d');
+      const canvasElement = this.$refs.sitasiChart;
+      if (!canvasElement) {
+        console.warn('⚠️ Sitasi chart canvas not found');
+        return;
+      }
+      
+      const ctx = canvasElement.getContext('2d');
       this.sitasiChart = new Chart(ctx, {
         type: 'bar',
         data: {
           labels: this.sitasiData.labels,
           datasets: [{
-            label: 'Jumlah Publikasi',
+            label: 'Jumlah Sitasi',
             data: this.sitasiData.values,
             backgroundColor: '#f4c542',
             borderRadius: 4
@@ -290,52 +381,12 @@ export default {
           maintainAspectRatio: true,
           scales: {
             x: {
-              beginAtZero: true,
-              ticks: {
-                stepSize: 95
-              }
+              beginAtZero: true
             }
           },
           plugins: {
             legend: {
               display: false
-            }
-          }
-        }
-      });
-    },
-
-    initJenisPublikasiChart() {
-      const ctx = this.$refs.jenisPublikasiChart.getContext('2d');
-      this.jenisPublikasiChart = new Chart(ctx, {
-        type: 'pie',
-        data: {
-          labels: this.jenisPublikasiData.labels,
-          datasets: [{
-            data: this.jenisPublikasiData.values,
-            backgroundColor: ['#1e5a6e', '#6ba3b8', '#f4c542', '#e8b84a'],
-            borderWidth: 0
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          plugins: {
-            legend: {
-              position: 'right',
-              labels: {
-                padding: 15,
-                font: {
-                  size: 12
-                }
-              }
-            },
-            tooltip: {
-              callbacks: {
-                label: (context) => {
-                  return `${context.label}: ${context.parsed}%`;
-                }
-              }
             }
           }
         }
@@ -355,10 +406,6 @@ export default {
       this.sitasiChart.data.labels = this.sitasiData.labels;
       this.sitasiChart.data.datasets[0].data = this.sitasiData.values;
       this.sitasiChart.update();
-
-      this.jenisPublikasiChart.data.labels = this.jenisPublikasiData.labels;
-      this.jenisPublikasiChart.data.datasets[0].data = this.jenisPublikasiData.values;
-      this.jenisPublikasiChart.update();
     }
   },
 
@@ -367,7 +414,6 @@ export default {
     if (this.programStudiChart) this.programStudiChart.destroy();
     if (this.trendChart) this.trendChart.destroy();
     if (this.sitasiChart) this.sitasiChart.destroy();
-    if (this.jenisPublikasiChart) this.jenisPublikasiChart.destroy();
   }
 };
 </script>

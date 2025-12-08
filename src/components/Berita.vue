@@ -5,58 +5,41 @@
       <p class="berita-subtitle">Informasi terbaru tentang publikasi dan tren riset di Fasilkom UMB</p>
     </div>
 
-    <div class="berita-content">
-      <!-- Berita Baru -->
-      <div class="berita-card berita-baru" @click="handleBeritaClick(beritaList[0])">
-        <div class="berita-badge badge-baru">Publikasi Baru</div>
-        <div class="berita-counter">20 Items</div>
-        <h2 class="berita-card-title">20 PUBLIKASI BARU TELAH DITAMBAHKAN</h2>
-        <p class="berita-card-description">
-          Data publikasi terbaru dari Google Scholar telah diperbarui untuk periode November 2025
-        </p>
-        <div class="berita-meta">
-          <svg class="berita-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="1"></circle>
-            <path d="M12 8v4l3 2"></path>
-            <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"></path>
-          </svg>
-          <span class="berita-time">1 bulan yang lalu | 10 November 2025</span>
-        </div>
-      </div>
+    <!-- Loading State -->
+    <LoadingState v-if="loading" message="⏳ Memuat berita..." />
 
-      <!-- Berita Trending -->
-      <div class="berita-card berita-trending" @click="handleBeritaClick(beritaList[1])">
-        <div class="berita-badge badge-trending">Trending</div>
-        <div class="berita-counter">20 Items</div>
-        <h2 class="berita-card-title">Topik 'Deep Learning' Meningkat Pesat</h2>
-        <p class="berita-card-description">
-          Terjadi peningkatan 20% publikasi dengan topik Deep Learning dibanding tahun lalu
-        </p>
-        <div class="berita-meta">
-          <svg class="berita-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="1"></circle>
-            <path d="M12 8v4l3 2"></path>
-            <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"></path>
-          </svg>
-          <span class="berita-time">2 bulan yang lalu | 10 Oktober 2025</span>
-        </div>
-      </div>
+    <!-- Error State -->
+    <ErrorState 
+      v-else-if="error" 
+      :title="'Gagal Memuat Berita'"
+      :message="error"
+      @retry="fetchBerita"
+    />
 
-      <!-- Berita Pencapaian -->
-      <div class="berita-card berita-pencapaian" @click="handleBeritaClick(beritaList[2])">
-        <div class="berita-badge badge-pencapaian">Pencapaian</div>
-        <div class="berita-counter">8 Items</div>
-        <h2 class="berita-card-title">Milestone 400+ Publikasi Tercapai</h2>
-        <p class="berita-card-description">
-          Fakultas Ilmu Komputer Universitas Mercu Buana telah mencapai 400 publikasi ilmiah di Google Scholar
-        </p>
-        <div class="berita-meta">
-          <svg class="berita-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <circle cx="12" cy="12" r="1"></circle>
-            <path d="M12 8v4l3 2"></path>
-            <path d="M12 22C6.477 22 2 17.523 2 12S6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"></path>
-          </svg>
-          <span class="berita-time">3 bulan yang lalu | 10 September 2025</span>
+    <!-- Empty State -->
+    <div v-else-if="beritaList.length === 0" class="empty-state">
+      <p>Tidak ada berita untuk ditampilkan</p>
+    </div>
+
+    <!-- Berita List -->
+    <div v-else class="berita-content">
+      <div 
+        v-for="berita in beritaList" 
+        :key="berita.id"
+        class="berita-card"
+        @click="handleBeritaClick(berita)"
+      >
+        <div class="berita-card-top">
+          <span class="berita-badge" :class="getBadgeClass(berita.tags)">
+            {{ getBadgeLabel(berita.tags) }}
+          </span>
+          <span class="berita-count">20 items</span>
+        </div>
+        <h2 class="berita-card-title">{{ berita.judul }}</h2>
+        <p class="berita-card-description">{{ berita.deskripsi_singkat }}</p>
+        <div class="berita-footer">
+          <span class="berita-time">{{ formatTimeAgo(berita.created_at) }}</span>
+          <span class="berita-date">{{ formatDate(berita.created_at) }}</span>
         </div>
       </div>
     </div>
@@ -66,63 +49,116 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
+import { newsAPI } from '../api/newsAPI';
+import LoadingState from './LoadingState.vue';
+import ErrorState from './ErrorState.vue';
 
 const router = useRouter();
+const beritaList = ref([]);
+const loading = ref(false);
+const error = ref(null);
 
-const beritaList = ref([
-  {
-    id: 1,
-    type: 'baru',
-    badge: 'Publikasi Baru',
-    title: '20 PUBLIKASI BARU TELAH DITAMBAHKAN',
-    description: 'Data publikasi terbaru dari Google Scholar telah diperbarui untuk periode November 2025',
-    itemCount: '20 Items',
-    date: '10 November 2025',
-    daysAgo: '1 bulan yang lalu'
-  },
-  {
-    id: 2,
-    type: 'trending',
-    badge: 'Trending',
-    title: "Topik 'Deep Learning' Meningkat Pesat",
-    description: 'Terjadi peningkatan 20% publikasi dengan topik Deep Learning dibanding tahun lalu',
-    itemCount: '20 Items',
-    date: '10 Oktober 2025',
-    daysAgo: '2 bulan yang lalu'
-  },
-  {
-    id: 3,
-    type: 'pencapaian',
-    badge: 'Pencapaian',
-    title: 'Milestone 400+ Publikasi Tercapai',
-    description: 'Fakultas Ilmu Komputer Universitas Mercu Buana telah mencapai 400 publikasi ilmiah di Google Scholar',
-    itemCount: '8 Items',
-    date: '10 September 2025',
-    daysAgo: '3 bulan yang lalu'
-  }
-]);
-
-// Method untuk fetch berita dari API (akan digunakan nanti)
+// Fetch berita dari API
 const fetchBerita = async () => {
+  loading.value = true;
+  error.value = null;
+
   try {
-    // Ganti dengan URL API Laravel Anda
-    const response = await fetch('http://your-laravel-api.test/api/berita');
-    const data = await response.json();
+    console.log('🔵 Fetching news...');
+    const data = await newsAPI.getAllNews();
+    
+    console.log('✅ News loaded:', data);
     beritaList.value = data;
-  } catch (error) {
-    console.error('Error fetching berita:', error);
+  } catch (err) {
+    console.error('❌ Error loading news:', err);
+    error.value = err.message || 'Gagal memuat berita';
+  } finally {
+    loading.value = false;
   }
 };
 
-// Method untuk handle click pada berita (navigate ke detail)
+// Format tanggal untuk tampilan
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('id-ID', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+// Format kategori
+const formatCategory = (category) => {
+  if (!category) return 'Berita';
+  return category.charAt(0).toUpperCase() + category.slice(1);
+};
+
+// Get badge label dari tags
+const getBadgeLabel = (tagsString) => {
+  if (!tagsString) return 'Berita';
+  const tags = tagsString.split(',').map(t => t.trim().toLowerCase());
+  
+  if (tags.includes('publikasi baru')) return 'Publikasi Baru';
+  if (tags.includes('trending')) return 'Trending';
+  if (tags.includes('pencapaian')) return 'Pencapaian';
+  if (tags.includes('award')) return 'Penghargaan';
+  
+  return tags[0]?.charAt(0).toUpperCase() + tags[0]?.slice(1) || 'Berita';
+};
+
+// Get badge class untuk styling
+const getBadgeClass = (tagsString) => {
+  if (!tagsString) return 'badge-default';
+  const tags = tagsString.split(',').map(t => t.trim().toLowerCase());
+  
+  if (tags.includes('publikasi baru')) return 'badge-baru';
+  if (tags.includes('trending')) return 'badge-trending';
+  if (tags.includes('pencapaian')) return 'badge-pencapaian';
+  if (tags.includes('award')) return 'badge-award';
+  
+  return 'badge-default';
+};
+
+// Get tags dari string
+const getTags = (tagsString) => {
+  if (!tagsString) return [];
+  return tagsString.split(',').map(tag => tag.trim()).slice(0, 3);
+};
+
+// Hitung waktu yang lalu
+const formatTimeAgo = (dateString) => {
+  if (!dateString) return '';
+  
+  const date = new Date(dateString);
+  const now = new Date();
+  const diff = now - date;
+  
+  const seconds = Math.floor(diff / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const hours = Math.floor(minutes / 60);
+  const days = Math.floor(hours / 24);
+  const weeks = Math.floor(days / 7);
+  const months = Math.floor(days / 30);
+  
+  if (seconds < 60) return 'baru saja';
+  if (minutes < 60) return `${minutes} menit lalu`;
+  if (hours < 24) return `${hours} jam lalu`;
+  if (days < 7) return `${days} hari lalu`;
+  if (weeks < 4) return `${weeks} minggu lalu`;
+  if (months < 12) return `${months} bulan lalu`;
+  
+  return formatDate(dateString);
+};
+
+// Handle click pada berita
 const handleBeritaClick = (berita) => {
   console.log('Berita clicked:', berita);
   router.push(`/berita/${berita.id}`);
 };
 
 onMounted(() => {
-  // TODO: Uncomment ketika API sudah siap
-  // fetchBerita();
+  fetchBerita();
 });
 </script>
 
@@ -149,30 +185,38 @@ onMounted(() => {
 .berita-subtitle {
   font-size: 16px;
   color: #7f8c8d;
-  font-weight: 400;
+  margin: 0;
 }
 
 .berita-content {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
   display: flex;
   flex-direction: column;
-  gap: 25px;
-  max-width: 1500px;
-  margin: 0 auto;
+  gap: 24px;
 }
 
 .berita-card {
   background: white;
   border-radius: 12px;
-  padding: 30px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s, box-shadow 0.2s;
-  position: relative;
+  padding: 28px;
   cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-left: none;
 }
 
 .berita-card:hover {
   transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
+}
+
+.berita-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 .berita-badge {
@@ -181,82 +225,87 @@ onMounted(() => {
   border-radius: 20px;
   font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
-  margin-bottom: 12px;
+  color: white;
+  white-space: nowrap;
 }
 
 .badge-baru {
-  background: #e3f2fd;
-  color: #1565c0;
+  background: #4c72b0;
 }
 
 .badge-trending {
-  background: #fce4ec;
-  color: #c2185b;
+  background: #d63384;
 }
 
 .badge-pencapaian {
-  background: #fff3e0;
-  color: #e65100;
+  background: #f59e0b;
 }
 
-.berita-counter {
-  position: absolute;
-  top: 25px;
-  right: 30px;
-  font-size: 13px;
+.badge-award {
+  background: #10b981;
+}
+
+.badge-default {
+  background: #6b7280;
+}
+
+.berita-count {
+  font-size: 12px;
   color: #95a5a6;
-  font-weight: 500;
+  margin-left: auto;
 }
 
 .berita-card-title {
   font-size: 20px;
   font-weight: 700;
-  color: #2c3e50;
-  margin: 15px 0;
+  color: #1a202c;
+  margin: 0 0 12px 0;
   line-height: 1.4;
 }
 
 .berita-card-description {
-  font-size: 15px;
+  font-size: 14px;
   color: #5a6c7d;
   line-height: 1.6;
-  margin-bottom: 20px;
+  margin: 0 0 20px 0;
 }
 
-.berita-meta {
+.berita-footer {
   display: flex;
   align-items: center;
-  gap: 10px;
-  color: #95a5a6;
+  gap: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #ecf0f1;
   font-size: 13px;
 }
 
-.berita-icon {
-  width: 16px;
-  height: 16px;
-  color: #bdc3c7;
-  flex-shrink: 0;
-}
-
 .berita-time {
-  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #7f8c8d;
+  font-weight: 500;
 }
 
-/* Badge Colors - Alternative Styles */
-.berita-baru .berita-badge {
-  background: #1565c0;
-  color: white;
+.berita-time::before {
+  content: '⏱️';
 }
 
-.berita-trending .berita-badge {
-  background: #c2185b;
-  color: white;
+.berita-date {
+  color: #95a5a6;
+  font-size: 12px;
 }
 
-.berita-pencapaian .berita-badge {
-  background: #e65100;
-  color: white;
+.empty-state {
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+  padding: 60px 20px;
+  background: white;
+  border-radius: 12px;
+  color: #7f8c8d;
+  font-size: 16px;
 }
 
 /* Responsive Design */
@@ -281,18 +330,12 @@ onMounted(() => {
     padding: 20px;
   }
 
-  .berita-counter {
-    position: static;
-    margin-bottom: 10px;
-    display: inline-block;
-  }
-
   .berita-card-title {
     font-size: 18px;
   }
 
   .berita-card-description {
-    font-size: 14px;
+    font-size: 13px;
   }
 }
 
@@ -322,8 +365,10 @@ onMounted(() => {
     font-size: 13px;
   }
 
-  .berita-time {
-    white-space: normal;
+  .berita-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }
 </style>

@@ -55,7 +55,19 @@
         </div>
       </div>
 
-      <div class="table-wrapper">
+      <!-- Loading State -->
+      <LoadingState v-if="loading" message="⏳ Memuat publikasi dari server..." />
+
+      <!-- Error State -->
+      <ErrorState 
+        v-else-if="error" 
+        :title="'Gagal Memuat Data'"
+        :message="error"
+        @retry="fetchPublications"
+      />
+
+      <!-- Data State -->
+      <div v-else class="table-wrapper">
         <table class="data-table">
           <thead>
             <tr>
@@ -77,7 +89,7 @@
               <td>{{ item.totalPenelitian }}</td>
               <td>{{ item.totalSitasi }}</td>
               <td>
-                <router-link :to="`/data-publikasi/${formatNameToId(item.namaDosen)}`" class="btn-detail">LIHAT DETAIL</router-link>
+                <router-link :to="`/data-publikasi/${item.id}`" class="btn-detail">LIHAT DETAIL</router-link>
               </td>
             </tr>
             <tr v-if="paginatedData.length === 0">
@@ -112,7 +124,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import publicationsAPI from '../api/publicationsAPI';
+import LoadingState from './LoadingState.vue';
+import ErrorState from './ErrorState.vue';
 
 // Filter state
 const filters = ref({
@@ -123,106 +138,39 @@ const filters = ref({
 const searchQuery = ref('');
 const itemsPerPage = ref(10);
 const currentPage = ref(1);
+const loading = ref(false);
+const error = ref(null);
 
-// Sample data (Replace with API call later)
-const allData = ref([
-  {
-    tahun: '2022',
-    namaDosen: 'Afiyati',
-    programStudi: 'TEKNIK INFORMATIKA',
-    totalPenelitian: 48,
-    totalSitasi: 457,
-    hIndex: 12
-  },
-  {
-    tahun: '2023',
-    namaDosen: 'Hakiman',
-    programStudi: 'TEKNIK INFORMATIKA',
-    totalPenelitian: 52,
-    totalSitasi: 678,
-    hIndex: 14
-  },
-  {
-    tahun: '2020',
-    namaDosen: 'Wirawan Gunawan',
-    programStudi: 'TEKNIK INFORMATIKA',
-    totalPenelitian: 45,
-    totalSitasi: 523,
-    hIndex: 11
-  },
-  {
-    tahun: '2025',
-    namaDosen: 'Supriadi',
-    programStudi: 'TEKNIK INFORMATIKA',
-    totalPenelitian: 58,
-    totalSitasi: 612,
-    hIndex: 15
-  },
-  {
-    tahun: '2022',
-    namaDosen: 'Hayfa Samtosso',
-    programStudi: 'SISTEM INFORMASI',
-    totalPenelitian: 42,
-    totalSitasi: 489,
-    hIndex: 10
-  },
-  {
-    tahun: '2021',
-    namaDosen: 'Budi Santoso',
-    programStudi: 'TEKNIK INFORMATIKA',
-    totalPenelitian: 38,
-    totalSitasi: 421,
-    hIndex: 9
-  },
-  {
-    tahun: '2020',
-    namaDosen: 'Siti Nurhaliza',
-    programStudi: 'SISTEM INFORMASI',
-    totalPenelitian: 35,
-    totalSitasi: 356,
-    hIndex: 8
-  },
-  {
-    tahun: '2022',
-    namaDosen: 'Ahmad Hermawan',
-    programStudi: 'SISTEM INFORMASI',
-    totalPenelitian: 51,
-    totalSitasi: 598,
-    hIndex: 13
-  },
-  {
-    tahun: '2025',
-    namaDosen: 'Ratna Sari',
-    programStudi: 'TEKNIK INFORMATIKA',
-    totalPenelitian: 44,
-    totalSitasi: 512,
-    hIndex: 11
-  },
-  {
-    tahun: '2024',
-    namaDosen: 'Bambang Suryanto',
-    programStudi: 'SISTEM INFORMASI',
-    totalPenelitian: 39,
-    totalSitasi: 445,
-    hIndex: 10
-  },
-  {
-    tahun: '2019',
-    namaDosen: 'Dwi Prabowo',
-    programStudi: 'SISTEM INFORMASI',
-    totalPenelitian: 47,
-    totalSitasi: 534,
-    hIndex: 12
-  },
-  {
-    tahun: '2019',
-    namaDosen: 'Endang Supriyanto',
-    programStudi: 'TEKNIK INFORMATIKA',
-    totalPenelitian: 53,
-    totalSitasi: 645,
-    hIndex: 15
+// Data dari API
+const allData = ref([]);
+
+// Fetch data publikasi dari backend (dengan pagination)
+const fetchPublications = async () => {
+  loading.value = true;
+  error.value = null;
+  
+  try {
+    console.log('🔵 Fetching all publications (with pagination)...');
+    
+    // Fetch semua data dari API
+    const rawData = await publicationsAPI.getAllPublications();
+    
+    // Transform data
+    allData.value = publicationsAPI.transformData(rawData);
+    
+    console.log('✅ Publications loaded:', allData.value);
+  } catch (err) {
+    error.value = err.message || 'Gagal memuat data publikasi dari server';
+    console.error('❌ Failed to fetch publications:', err);
+  } finally {
+    loading.value = false;
   }
-]);
+};
+
+// Load data saat component mounted
+onMounted(() => {
+  fetchPublications();
+});
 
 // Filtered data based on search and filters
 const filteredData = computed(() => {
@@ -260,11 +208,6 @@ const previousPage = () => {
   if (currentPage.value > 1) {
     currentPage.value--;
   }
-};
-
-// Format name to ID for routing
-const formatNameToId = (name) => {
-  return name.toLowerCase().replace(/\s+/g, '-');
 };
 
 // Export data
@@ -498,6 +441,42 @@ const exportData = () => {
 
 .btn-detail:hover {
   background-color: #ffb300;
+}
+
+/* ========== LOADING & ERROR STATES ========== */
+.loading-state,
+.error-state {
+  padding: 2rem;
+  text-align: center;
+  border-radius: 8px;
+  margin: 2rem 0;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.loading-state {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.error-state {
+  background-color: #ffebee;
+  color: #c62828;
+}
+
+.btn-retry {
+  margin-top: 1rem;
+  padding: 0.6rem 1.2rem;
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-retry:hover {
+  background-color: #b71c1c;
 }
 
 /* ========== PAGINATION ========== */
