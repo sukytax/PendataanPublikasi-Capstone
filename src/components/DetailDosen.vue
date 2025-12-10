@@ -58,24 +58,41 @@
                 <table class="publikasi-table">
                   <thead>
                     <tr>
-                      <th>NO</th>
-                      <th>JUDUL</th>
-                      <th>TAHUN</th>
-                      <th>JUMLAH SITASI</th>
+                      <th class="nomer-tabel">NO</th>
+                      <th class="judul-tabel">JUDUL</th>
+                      <th class="jumlah-sitasi-tabel">JUMLAH SITASI</th>
+                      <th class="tahun-tabel">TAHUN</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr v-for="(pub, index) in dosenData.daftarPublikasi" :key="index">
-                      <td>{{ index + 1 }}</td>
+                    <tr v-for="(pub, index) in paginatedData" :key="index">
+                      <td>{{ (currentPage - 1) * itemsPerPage + index + 1 }}</td>
                       <td>{{ pub.judul }}</td>
-                      <td>{{ pub.tahun }}</td>
                       <td>{{ pub.jumlah_sitasi }}</td>
+                      <td>{{ pub.tahun }}</td>
                     </tr>
-                    <tr v-if="dosenData.daftarPublikasi.length === 0">
+                    <tr v-if="paginatedData.length === 0">
                       <td colspan="4" class="text-center">Tidak ada publikasi</td>
                     </tr>
                   </tbody>
                 </table>
+                <div class="pagination">
+                  <button 
+                    @click="previousPage" 
+                    :disabled="currentPage === 1"
+                    class="pagination-btn">
+                    ← Sebelumnya
+                  </button>
+                  <div class="pagination-info">
+                    Halaman {{ currentPage }} dari {{ totalPages }}
+                  </div>
+                  <button 
+                    @click="nextPage" 
+                    :disabled="currentPage === totalPages"
+                    class="pagination-btn">
+                      Selanjutnya →
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -105,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, computed } from 'vue';
 import { useRoute } from 'vue-router';
 import publicationsAPI from '../api/publicationsAPI';
 import LoadingState from './LoadingState.vue';
@@ -115,6 +132,10 @@ const route = useRoute();
 const dosenData = ref(null);
 const loading = ref(false);
 const error = ref(null);
+
+// Pagination variables
+const currentPage = ref(1);
+const itemsPerPage = ref(10);
 
 // Fetch detail dosen dari API
 const fetchDosenDetail = async () => {
@@ -149,6 +170,35 @@ const fetchDosenDetail = async () => {
 onMounted(() => {
   fetchDosenDetail();
 });
+
+// Computed properties untuk pagination
+const filteredData = computed(() => {
+  return dosenData.value?.daftarPublikasi || [];
+});
+
+const paginatedData = computed(() => {
+  const start = (currentPage.value - 1) * itemsPerPage.value;
+  const end = start + itemsPerPage.value;
+  return filteredData.value.slice(start, end);
+});
+
+// Total pages
+const totalPages = computed(() => {
+  return Math.ceil(filteredData.value.length / itemsPerPage.value);
+});
+
+// Pagination methods
+const nextPage = () => {
+  if (currentPage.value < totalPages.value) {
+    currentPage.value++;
+  }
+};
+
+const previousPage = () => {
+  if (currentPage.value > 1) {
+    currentPage.value--;
+  }
+};
 </script>
 
 <style scoped>
@@ -165,7 +215,7 @@ onMounted(() => {
 }
 
 .page-container {
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -313,6 +363,21 @@ onMounted(() => {
   letter-spacing: 0.5px;
 }
 
+.nomer-tabel {
+  width: 5%;
+}
+.judul-tabel {
+  width: auto;
+}
+
+.jumlah-sitasi-tabel {
+  width: 15%;
+}
+
+.tahun-tabel {
+  width: 10%;
+}
+
 .publikasi-table td {
   padding: 1rem;
   border-bottom: 1px solid #f0f0f0;
@@ -350,6 +415,41 @@ onMounted(() => {
   color: #555;
   line-height: 1.6;
   text-align: justify;
+}
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.pagination-btn {
+  padding: 0.6rem 1.2rem;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background-color: #0e3b63;
+  color: white;
+}
+
+.pagination-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  font-size: 0.9rem;
+  color: #666;
 }
 
 /* Profile Link */

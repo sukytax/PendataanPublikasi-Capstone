@@ -14,53 +14,45 @@
     />
 
     <!-- Data State -->
-    <div v-else>
+    <div v-else-if="stats">
       <!-- Statistics Cards -->
       <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon blue">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-          </svg>
+          <img src="/public/logo_dosen.png" alt="logo total dosen">
         </div>
         <div class="stat-content">
-          <div class="stat-value">{{ stats.totalDosen }}</div>
+          <div class="stat-value">{{ stats?.totalDosen || 0 }}</div>
           <div class="stat-label">Jumlah Dosen</div>
         </div>
       </div>
 
       <div class="stat-card">
         <div class="stat-icon orange">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-            <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-          </svg>
+          <img src="/public/logo_publikasi.png" alt="logo publikasi">
         </div>
         <div class="stat-content">
-          <div class="stat-value">{{ stats.totalPublikasi.toLocaleString('id-ID') }}</div>
+          <div class="stat-value">{{ (stats?.totalPublikasi || 0).toLocaleString('id-ID') }}</div>
           <div class="stat-label">Total Publikasi</div>
         </div>
       </div>
 
       <div class="stat-card">
         <div class="stat-icon pink">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-            <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-          </svg>
+          <img src="/public/logo_sitasi.png" alt="logo sitasi">
         </div>
         <div class="stat-content">
-          <div class="stat-value">{{ stats.totalSitasi.toLocaleString('id-ID') }}</div>
+          <div class="stat-value">{{ (stats?.totalSitasi || 0).toLocaleString('id-ID') }}</div>
           <div class="stat-label">Total Sitasi</div>
         </div>
       </div>
 
       <div class="stat-card">
         <div class="stat-icon dark">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
-            <path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1c-1.3 0-2.4.84-2.82 2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 0c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
-          </svg>
+          <img src="/public/logo_tahun.png" alt="logo tahun terakhir">
         </div>
         <div class="stat-content">
-          <div class="stat-value">{{ stats.tahunTerakhir }}</div>
+          <div class="stat-value">{{ stats?.tahunTerakhir || '-' }}</div>
           <div class="stat-label">Tahun Publikasi Terakhir</div>
         </div>
       </div>
@@ -88,27 +80,27 @@
     </div>
 
     <!-- Insights Section -->
-    <div class="insights-section">
+    <div v-if="insights" class="insights-section">
       <h2 class="insights-title">INSIGHT KUNCI DARI GOOGLE SCHOLAR</h2>
       <div class="insights-grid">
         <div class="insight-card">
           <h3 class="insight-heading">Pertumbuhan Publikasi</h3>
-          <p class="insight-text">{{ insights.pertumbuhanPublikasi }}</p>
+          <p class="insight-text">{{ insights?.pertumbuhanPublikasi || '-' }}</p>
         </div>
 
         <div class="insight-card">
           <h3 class="insight-heading">Dampak Sitasi</h3>
-          <p class="insight-text">{{ insights.dampakSitasi }}</p>
+          <p class="insight-text">{{ insights?.dampakSitasi || '-' }}</p>
         </div>
 
         <div class="insight-card">
           <h3 class="insight-heading">Dominasi Program Studi</h3>
-          <p class="insight-text">{{ insights.dominasiProgramStudi }}</p>
+          <p class="insight-text">{{ insights?.dominasiProgramStudi || '-' }}</p>
         </div>
 
         <div class="insight-card">
           <h3 class="insight-heading">Jangkauan Internasional</h3>
-          <p class="insight-text">{{ insights.jangkauanInternasional }}</p>
+          <p class="insight-text">{{ insights?.jangkauanInternasional || '-' }}</p>
         </div>
       </div>
     </div>
@@ -136,50 +128,21 @@ export default {
       error: null,
       
       // Data statistik - akan diambil dari API
-      stats: {
-        totalDosen: 20,
-        totalPublikasi: 183,
-        totalSitasi: 8373,
-        tahunTerakhir: 2025
-      },
+      stats: null,
       
       // Data insights - akan diambil dari API
-      insights: {
-        pertumbuhanPublikasi: 'Publikasi mencapai 183 dengan 20 dosen aktif di 20 topik riset.',
-        dampakSitasi: 'Total sitasi mencapai 8373, menunjukkan dampak riset yang signifikan dengan rata-rata 418 sitasi per dosen.',
-        dominasiProgramStudi: 'Dosen terprodukstif adalah Siti Choiriah dengan 10 publikasi.',
-        jangkauanInternasional: 'Dosen dengan sitasi tertinggi adalah Sharryn Kasmir dengan 1742 sitasi.'
-      },
+      insights: null,
 
       // Data untuk charts - akan diambil dari API
-      programStudiData: {
-        labels: ['Siti Choiriah', 'Heri Budianto', 'Adizty Suparno', 'Swarmilah Hariani., M.Acc.,Ph.D', 'Ratna Mappanyuki'],
-        values: [10, 10, 10, 10, 10]
-      },
-
-      trendData: {
-        labels: ['1996', '1999', '2007', '2008', '2011', '2013', '2014', '2015', '2016', '2017', '2018', '2019', '2020', '2021', '2022', '2023', '2024', '2025'],
-        values: [1, 1, 3, 2, 2, 3, 6, 8, 9, 10, 12, 17, 32, 22, 15, 19, 8, 13]
-      },
-
-      sitasiData: {
-        labels: ['Sharryn Kasmir', 'Dr. Agus Arijanto,SE,MM', 'Adi Nurmahdi', 'Hari Setiyawati', 'Heri Budianto'],
-        values: [1742, 1257, 699, 597, 506]
-      }
+      programStudiData: null,
+      trendData: null,
+      sitasiData: null
     };
   },
 
   mounted() {
     // Fetch data dari API
     this.fetchAnalysisData();
-    
-    // Fallback: initialize charts dengan default data setelah delay
-    setTimeout(() => {
-      if (!this.loading && !this.error) {
-        console.log('📊 Initializing charts with current data');
-        this.initAllCharts();
-      }
-    }, 500);
   },
 
   methods: {
@@ -195,9 +158,19 @@ export default {
         const rawData = await dashboardAPI.getDashboardData();
         console.log('📥 Raw API response:', rawData);
         
+        // Validate data exists
+        if (!rawData) {
+          throw new Error('Data dashboard tidak ditemukan dari API');
+        }
+        
         // Transform data
         const transformedData = dashboardAPI.transformDashboardData(rawData);
         console.log('📊 Transformed data:', transformedData);
+        
+        // Validate transformed data
+        if (!transformedData || !transformedData.stats) {
+          throw new Error('Struktur data dashboard tidak valid');
+        }
         
         // Update all data
         this.stats = transformedData.stats;
@@ -457,8 +430,8 @@ export default {
 }
 
 .stat-icon {
-  width: 60px;
-  height: 60px;
+  width: auto;
+  height: auto;
   border-radius: 12px;
   display: flex;
   align-items: center;
@@ -466,21 +439,6 @@ export default {
   flex-shrink: 0;
 }
 
-.stat-icon.blue {
-  background: #2196f3;
-}
-
-.stat-icon.orange {
-  background: #ff9800;
-}
-
-.stat-icon.pink {
-  background: #e91e63;
-}
-
-.stat-icon.dark {
-  background: #37474f;
-}
 
 .stat-content {
   flex: 1;

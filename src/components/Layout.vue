@@ -4,7 +4,7 @@
       <div class="navbar-content">
         <div class="brand">
           <div class="logo-placeholder">
-            <img src="" alt="Logo" class="logo-img" /> 
+            <img src="/public/logo_app.png" alt="Logo" class="logo-img" /> 
           </div>
           <div class="brand-text">
             <h1>ScholarTrack</h1>

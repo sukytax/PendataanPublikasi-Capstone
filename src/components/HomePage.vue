@@ -14,24 +14,40 @@
       <!-- Stats Section -->
       <div class="stats-container">
         <div class="stat-card">
-          <div class="stat-icon">👤</div>
-          <div class="stat-value">{{ stats.totalDosen }}</div>
-          <div class="stat-label">Jumlah Dosen</div>
+          <div class="stat-icon blue">
+            <img src="/public/logo_dosen.png" alt="logo total dosen">
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ stats?.totalDosen || 0 }}</div>
+            <div class="stat-label">Jumlah Dosen</div>
+          </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">📁</div>
-          <div class="stat-value">{{ stats.totalPublikasi.toLocaleString('id-ID') }}</div>
-          <div class="stat-label">Total Publikasi</div>
+          <div class="stat-icon orange">
+            <img src="/public/logo_publikasi.png" alt="logo publikasi">
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ (stats?.totalPublikasi || 0).toLocaleString('id-ID') }}</div>
+            <div class="stat-label">Total Publikasi</div>
+          </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">📊</div>
-          <div class="stat-value">{{ stats.totalSitasi.toLocaleString('id-ID') }}</div>
-          <div class="stat-label">Total Sitasi</div>
+          <div class="stat-icon pink">
+            <img src="/public/logo_sitasi.png" alt="logo sitasi">
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ (stats?.totalSitasi || 0).toLocaleString('id-ID') }}</div>
+            <div class="stat-label">Total Sitasi</div>
+          </div>
         </div>
         <div class="stat-card">
-          <div class="stat-icon">📅</div>
-          <div class="stat-value">{{ stats.tahunTerakhir }}</div>
-          <div class="stat-label">Tahun Publikasi Terakhir</div>
+          <div class="stat-icon dark">
+            <img src="/public/logo_tahun.png" alt="logo tahun terakhir">
+          </div>
+          <div class="stat-content">
+            <div class="stat-value">{{ stats?.tahunTerakhir || '-' }}</div>
+            <div class="stat-label">Tahun Publikasi Terakhir</div>
+          </div>
         </div>
       </div>
     </section>
@@ -39,7 +55,9 @@
     <!-- Tentang Section -->
     <section class="about-section">
       <div class="about-card">
-        <div class="about-icon">📖</div>
+        <div class="about-icon">
+          <img src="/public/logo_app.png" alt="logo app">
+        </div>
         <h2>Tentang ScholarTrack</h2>
         <p>ScholarTrack adalah platform digital yang dirancang khusus untuk memonitor dan menganalisis publikasi ilmiah dosen Fakultas Ilmu Komputer Universitas Mercu Buana. Dengan mengintegrasikan data dari Google Scholar, platform ini menyediakan visualisasi komprehensif tentang tren penelitian, topik riset populer, dan produktivitas akademik. Informasi ini membantu dalam pengambilan keputusan strategis dan peningkatan kualitas riset. Platform ini menyajikan data secara transparan dan mudah diakses, mendorong kolaborasi riset, dan meningkatkan visibilitas kontribusi akademik dosen Fasilkom UMB.</p>
       </div>
@@ -346,12 +364,12 @@ onMounted(async () => {
   background: linear-gradient(135deg, #0e3b63 0%, #1a5a8a 100%);
   color: white;
   padding: 3rem 2rem;
-  text-align: center;
 }
 
 .hero-content {
   max-width: 1200px;
   margin: 0 auto 3rem;
+  text-align: center;
 }
 
 .hero-title {
@@ -414,37 +432,53 @@ onMounted(async () => {
 /* Stats Container */
 .stats-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 10rem;
-  max-width: 1600px;
-  margin: 0 auto;
-  padding: 0 2rem;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 0.150fr));
+  gap: 10px;
+  margin-bottom: 20px;
+  justify-content: space-evenly;
 }
 
 .stat-card {
   background-color: white;
-  padding: 1.5rem;
+  padding: 15px;
   border-radius: 12px;
-  text-align: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 .stat-icon {
-  font-size: 2.5rem;
-  margin-bottom: 0.5rem;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.stat-content {
+  flex: 1;
 }
 
 .stat-value {
-  font-size: 1.8rem;
+  font-size: 32px;
   font-weight: 700;
   color: #0e3b63;
-  margin-bottom: 0.5rem;
+  line-height: 1.2;
 }
 
 .stat-label {
-  font-size: 0.85rem;
-  color: #666;
-  font-weight: 500;
+  font-size: 14px;
+  color: #7f8c8d;
+  margin-top: 5px;
 }
 
 /* ========== ABOUT SECTION ========== */
