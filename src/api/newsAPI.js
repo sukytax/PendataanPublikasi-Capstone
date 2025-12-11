@@ -12,17 +12,25 @@ export const newsAPI = {
    */
   async getAllNews() {
     try {
-      console.log('🔵 Fetching all news...');
       const response = await apiClient.get('/client/news');
       
-      // Handle both direct array dan paginated response
-      const data = response.data || response;
-      const newsArray = Array.isArray(data) ? data : (data.data || []);
+      // Backend returns either {status: 'success', data: [...]} or direct array
+      let newsArray = [];
       
-      console.log('✅ News loaded:', newsArray);
+      if (response.status === 'success' && response.data) {
+        // Response format: {status: 'success', data: [...]}
+        newsArray = Array.isArray(response.data) ? response.data : response.data.data || [];
+      } else if (Array.isArray(response)) {
+        // Direct array response
+        newsArray = response;
+      } else if (response.data) {
+        // Nested data property
+        newsArray = Array.isArray(response.data) ? response.data : response.data.data || [];
+      }
+      
       return newsArray;
     } catch (error) {
-      console.error('❌ Error loading news:', error);
+      console.error('❌ Error loading news:', error.message);
       throw error;
     }
   },
@@ -34,11 +42,8 @@ export const newsAPI = {
    */
   async getNewsDetail(id) {
     try {
-      console.log(`🔵 Fetching news detail with ID: ${id}`);
       const response = await apiClient.get(`/client/news/${id}`);
       const data = response.data || response;
-      
-      console.log('✅ News detail loaded:', data);
       
       // Handle both direct object dan paginated response
       if (data.data) {
@@ -47,7 +52,7 @@ export const newsAPI = {
         return data;
       }
     } catch (error) {
-      console.error(`❌ Error loading news detail:`, error);
+      console.error(`❌ Error loading news detail:`, error.message);
       throw error;
     }
   },

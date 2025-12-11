@@ -66,12 +66,20 @@
       </div>
 
       <div class="chart-card">
+        <h2 class="chart-title">Distribusi Publikasi per Program Studi</h2>
+        <canvas ref="programStudiPieChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="charts-row">
+      <div class="chart-card">
         <h2 class="chart-title">Tren Publikasi Dari Tahun ke Tahun</h2>
         <canvas ref="trendChart"></canvas>
       </div>
     </div>
 
-    <!-- Charts Row 2 -->
+    <!-- Charts Row 3 -->
     <div class="charts-row">
       <div class="chart-card">
         <h2 class="chart-title">Top 5 Dosen Dengan Sitasi Tertinggi</h2>
@@ -111,6 +119,7 @@
 <script>
 import { Chart, registerables } from 'chart.js';
 import dashboardAPI from '../api/dashboardAPI';
+import { publicationsAPI } from '../api/publicationsAPI';
 import LoadingState from './LoadingState.vue';
 import ErrorState from './ErrorState.vue';
 
@@ -135,6 +144,7 @@ export default {
 
       // Data untuk charts - akan diambil dari API
       programStudiData: null,
+      programStudiDistribution: null,
       trendData: null,
       sitasiData: null
     };
@@ -152,11 +162,8 @@ export default {
       this.error = null;
 
       try {
-        console.log('🔵 Fetching dashboard data...');
-        
         // Fetch data dari API
         const rawData = await dashboardAPI.getDashboardData();
-        console.log('📥 Raw API response:', rawData);
         
         // Validate data exists
         if (!rawData) {
@@ -165,7 +172,6 @@ export default {
         
         // Transform data
         const transformedData = dashboardAPI.transformDashboardData(rawData);
-        console.log('📊 Transformed data:', transformedData);
         
         // Validate transformed data
         if (!transformedData || !transformedData.stats) {
@@ -179,16 +185,11 @@ export default {
         this.sitasiData = transformedData.sitasiData;
         this.insights = transformedData.insights;
         
-        console.log('✅ Data assigned to component:', {
-          stats: this.stats,
-          trendData: this.trendData,
-          programStudiData: this.programStudiData,
-          sitasiData: this.sitasiData
-        });
+        // Calculate program studi distribution dari ALL publications
+        this.programStudiDistribution = await this.calculateProgramStudiDistribution();
         
         // Inisialisasi semua chart setelah data di-load dan DOM siap
         this.$nextTick(() => {
-          console.log('🎨 Initializing charts...');
           // Add delay untuk ensure DOM fully rendered
           setTimeout(() => {
             this.initAllCharts();
@@ -212,31 +213,20 @@ export default {
           sitasiChart: !!this.$refs.sitasiChart
         });
         
-        console.log('📌 Current data:', {
-          programStudiData: this.programStudiData,
-          trendData: this.trendData,
-          sitasiData: this.sitasiData
-        });
-        
         if (this.$refs.programStudiChart) {
-          console.log('✨ Initializing programStudiChart');
           this.initProgramStudiChart();
-        } else {
-          console.warn('⚠️ programStudiChart ref not found');
+        }
+        
+        if (this.$refs.programStudiPieChart) {
+          this.initProgramStudiPieChart();
         }
         
         if (this.$refs.trendChart) {
-          console.log('✨ Initializing trendChart');
           this.initTrendChart();
-        } else {
-          console.warn('⚠️ trendChart ref not found');
         }
         
         if (this.$refs.sitasiChart) {
-          console.log('✨ Initializing sitasiChart');
           this.initSitasiChart();
-        } else {
-          console.warn('⚠️ sitasiChart ref not found');
         }
       } catch (error) {
         console.error('❌ Error initializing charts:', error);
@@ -246,14 +236,8 @@ export default {
     initProgramStudiChart() {
       const canvasElement = this.$refs.programStudiChart;
       if (!canvasElement) {
-        console.warn('⚠️ Program Studi canvas not found');
         return;
       }
-      
-      console.log('📊 programStudiChart data:', {
-        labels: this.programStudiData.labels,
-        values: this.programStudiData.values
-      });
       
       const ctx = canvasElement.getContext('2d');
       this.programStudiChart = new Chart(ctx, {
@@ -286,14 +270,68 @@ export default {
           }
         }
       });
+    },
+
+    initProgramStudiPieChart() {
+      const canvasElement = this.$refs.programStudiPieChart;
+      if (!canvasElement) {
+        return;
+      }
       
-      console.log('✅ programStudiChart initialized');
+      const ctx = canvasElement.getContext('2d');
+      this.programStudiPieChart = new Chart(ctx, {
+        type: 'pie',
+        data: {
+          labels: this.programStudiDistribution.labels,
+          datasets: [{
+            label: 'Distribusi Publikasi',
+            data: this.programStudiDistribution.values,
+            backgroundColor: [
+              '#1e5a6e',
+              '#f4c542',
+              '#0d8aee',
+              '#e74c3c',
+              '#27ae60'
+            ],
+            borderColor: '#fff',
+            borderWidth: 2
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: {
+                padding: 15,
+                font: {
+                  size: 12
+                }
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed || 0;
+                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                  return `Total Penelitian: ${value}`;
+                },
+                afterLabel: function(context) {
+                  const label = context.label || '';
+                  return `Program: ${label}`;
+                }
+              }
+            }
+          }
+        }
+      });
     },
 
     initTrendChart() {
       const canvasElement = this.$refs.trendChart;
       if (!canvasElement) {
-        console.warn('⚠️ Trend chart canvas not found');
         return;
       }
       
@@ -332,7 +370,6 @@ export default {
     initSitasiChart() {
       const canvasElement = this.$refs.sitasiChart;
       if (!canvasElement) {
-        console.warn('⚠️ Sitasi chart canvas not found');
         return;
       }
       
@@ -372,6 +409,10 @@ export default {
       this.programStudiChart.data.datasets[0].data = this.programStudiData.values;
       this.programStudiChart.update();
 
+      this.programStudiPieChart.data.labels = this.programStudiDistribution.labels;
+      this.programStudiPieChart.data.datasets[0].data = this.programStudiDistribution.values;
+      this.programStudiPieChart.update();
+
       this.trendChart.data.labels = this.trendData.labels;
       this.trendChart.data.datasets[0].data = this.trendData.values;
       this.trendChart.update();
@@ -379,12 +420,55 @@ export default {
       this.sitasiChart.data.labels = this.sitasiData.labels;
       this.sitasiChart.data.datasets[0].data = this.sitasiData.values;
       this.sitasiChart.update();
+    },
+
+    async calculateProgramStudiDistribution() {
+      try {
+        // Fetch ALL dosen/researchers data
+        const allPublications = await publicationsAPI.getAllPublications();
+        
+        // Aggregate TOTAL PUBLICATIONS (not count of items) by program studi
+        const distribution = {};
+        
+        allPublications.forEach(dosen => {
+          // Get program studi with fallback chain
+          const programStudi = dosen.study_program?.program_studi || dosen.program_studi || 'Unknown';
+          
+          // Get TOTAL PUBLIKASI from publications_count field
+          const totalPublikasi = dosen.publications_count || 0;
+          
+          if (!distribution[programStudi]) {
+            distribution[programStudi] = 0;
+          }
+          // Add total publications from this dosen
+          distribution[programStudi] += totalPublikasi;
+        });
+        
+
+        
+        // Sort by value descending
+        const sorted = Object.entries(distribution)
+          .sort((a, b) => b[1] - a[1]);
+        
+        return {
+          labels: sorted.map(item => item[0]),
+          values: sorted.map(item => item[1])
+        };
+      } catch (error) {
+        console.error('❌ Error calculating program studi distribution:', error);
+        // Return empty distribution on error
+        return {
+          labels: [],
+          values: []
+        };
+      }
     }
   },
 
   beforeUnmount() {
     // Destroy charts sebelum component di-unmount
     if (this.programStudiChart) this.programStudiChart.destroy();
+    if (this.programStudiPieChart) this.programStudiPieChart.destroy();
     if (this.trendChart) this.trendChart.destroy();
     if (this.sitasiChart) this.sitasiChart.destroy();
   }

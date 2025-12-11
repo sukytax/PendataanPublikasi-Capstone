@@ -202,10 +202,7 @@ let trendChartInstance = null;
 // Fetch dashboard data
 const fetchDashboardData = async () => {
   try {
-    console.log('🔵 Fetching dashboard data...');
     const data = await dashboardAPI.getDashboardData();
-    
-    console.log('✅ Dashboard data loaded:', data);
     
     // Update stats
     stats.value = {
@@ -241,10 +238,7 @@ const fetchDashboardData = async () => {
 // Fetch berita from API
 const fetchBerita = async () => {
   try {
-    console.log('🔵 Fetching news data...');
     const newsArray = await newsAPI.getAllNews();
-    
-    console.log('✅ News data loaded:', newsArray);
     
     // Transform to berita format
     beritaList.value = newsArray.slice(0, 4).map(item => ({

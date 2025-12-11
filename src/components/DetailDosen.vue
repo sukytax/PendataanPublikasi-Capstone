@@ -49,7 +49,6 @@
             <span class="info-label">H-Index</span>
             <span class="info-value">: {{ dosenData.hIndex }}</span>
           </div>
-
           <!-- Daftar Publikasi -->
           <div class="info-row publikasi-section">
             <span class="info-label">Daftar Publikasi</span>
@@ -143,8 +142,6 @@ const fetchDosenDetail = async () => {
   error.value = null;
 
   try {
-    console.log('🔵 Fetching dosen detail...');
-    
     // Get ID dari route params
     const dosenId = route.params.id;
     
@@ -157,8 +154,6 @@ const fetchDosenDetail = async () => {
     
     // Transform data
     dosenData.value = publicationsAPI.transformDetailData(rawData);
-    
-    console.log('✅ Dosen detail loaded:', dosenData.value);
   } catch (err) {
     error.value = err.message || 'Gagal memuat data dosen';
     console.error('❌ Failed to fetch dosen detail:', err);

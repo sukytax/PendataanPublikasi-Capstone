@@ -66,10 +66,7 @@ const fetchBerita = async () => {
   error.value = null;
 
   try {
-    console.log('🔵 Fetching news...');
     const data = await newsAPI.getAllNews();
-    
-    console.log('✅ News loaded:', data);
     beritaList.value = data;
   } catch (err) {
     console.error('❌ Error loading news:', err);
@@ -155,7 +152,6 @@ const formatTimeAgo = (dateString) => {
 
 // Handle click pada berita
 const handleBeritaClick = (berita) => {
-  console.log('Berita clicked:', berita);
   router.push(`/berita/${berita.id}`);
 };
 

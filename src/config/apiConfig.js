@@ -86,10 +86,11 @@ export const apiClient = {
 
   // Debug helper
   debug() {
-    console.log('🔧 API Configuration:');
-    console.log(`  Base URL: ${API_CONFIG.baseURL}`);
-    console.log(`  Timeout: ${API_CONFIG.timeout}ms`);
-    console.log(`  Token: ${API_CONFIG.token ? API_CONFIG.token.substring(0, 20) + '...' : 'NOT SET'}`);
+    console.table({
+      'Base URL': API_CONFIG.baseURL,
+      'Timeout (ms)': API_CONFIG.timeout,
+      'Token': API_CONFIG.token ? '✅ Set' : '❌ Not set',
+    });
     return API_CONFIG;
   }
 };

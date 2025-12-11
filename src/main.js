@@ -24,11 +24,6 @@ window.__DEBUG__ = {
   }
 };
 
-console.log('💡 Debug tools available: window.__DEBUG__');
-console.log('   - window.__DEBUG__.apiConfig()  : Show API config');
-console.log('   - window.__DEBUG__.testEndpoint(\"/api/health\") : Test single endpoint');
-console.log('   - window.__DEBUG__.testAll() : Test all endpoints');
-
 const router = createRouter({
     routes: [
         {
@@ -64,5 +59,3 @@ const router = createRouter({
 })
 
 createApp(App).use(router).mount('#app')
-
-console.log('✅ Vue app mounted successfully');

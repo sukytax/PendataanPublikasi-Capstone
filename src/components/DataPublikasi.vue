@@ -26,8 +26,8 @@
           <label class="filter-label">PROGRAM STUDI</label>
           <select v-model="filters.programStudi" class="filter-select">
             <option value="">Pilih</option>
-            <option value="TEKNIK INFORMATIKA">Teknik Informatika</option>
-            <option value="SISTEM INFORMASI">Sistem Informasi</option>
+            <option value="Teknik Informatika">Teknik Informatika</option>
+            <option value="Sistem Informasi">Sistem Informasi</option>
           </select>
         </div>
       </div>
@@ -83,7 +83,7 @@
           <tbody>
             <tr v-for="(item, index) in paginatedData" :key="index">
               <td>{{ (currentPage - 1) * itemsPerPage + index + 1 }}</td>
-              <td>{{ item.tahun }}</td>
+              <td>{{ item.tahunRange || item.tahun }}</td>
               <td>{{ item.namaDosen }}</td>
               <td>{{ item.programStudi }}</td>
               <td>{{ item.totalPenelitian }}</td>
@@ -150,15 +150,11 @@ const fetchPublications = async () => {
   error.value = null;
   
   try {
-    console.log('🔵 Fetching all publications (with pagination)...');
-    
     // Fetch semua data dari API
     const rawData = await publicationsAPI.getAllPublications();
     
     // Transform data
     allData.value = publicationsAPI.transformData(rawData);
-    
-    console.log('✅ Publications loaded:', allData.value);
   } catch (err) {
     error.value = err.message || 'Gagal memuat data publikasi dari server';
     console.error('❌ Failed to fetch publications:', err);

@@ -12,21 +12,36 @@ export const dashboardAPI = {
    */
   async getDashboardData() {
     try {
-      console.log('🔵 Fetching dashboard data...');
       const response = await apiClient.get('/client/dashboard');
-      console.log('📥 Raw response from apiClient:', response);
       
-      // Handle both wrapped and unwrapped responses
-      const data = response.data ? response.data : response;
-      console.log('✅ Dashboard data loaded:', data);
+      // Backend returns {status: 'success', data: {...}}
+      // Extract the data property
+      const apiData = response.data || response;
       
-      if (!data || typeof data !== 'object') {
-        throw new Error('Invalid response format: data is not an object');
-      }
+      // Transform backend response ke format internal
+      const transformedData = {
+        jumlah_dosen: apiData.stats?.total_dosen || 0,
+        total_publikasi: apiData.stats?.total_publikasi || 0,
+        total_sitasi: parseInt(apiData.stats?.total_sitasi || 0),
+        tahun_terakhir: apiData.stats?.publikasi_terakhir || new Date().getFullYear(),
+        tren_publikasi: (apiData.chart || []).map(item => ({
+          tahun: parseInt(item.tahun),
+          total: item.total
+        })),
+        top_dosen_publikasi: (apiData.top_rank || []).slice(0, 5).map(item => ({
+          nama_dosen: item.nama_dosen,
+          publications_count: item.publications_count || item.total,
+          program_studi: item.study_program?.program_studi || item.program_studi || 'Unknown'
+        })),
+        top_dosen_sitasi: (apiData.top_rank || []).slice(0, 5).map(item => ({
+          nama_dosen: item.nama_dosen,
+          total_sitasi: item.total_sitasi || 0
+        }))
+      };
       
-      return data;
+      return transformedData;
     } catch (error) {
-      console.error('❌ Error loading dashboard data:', error);
+      console.error('❌ Error loading dashboard:', error.message);
       throw error;
     }
   },
@@ -37,10 +52,7 @@ export const dashboardAPI = {
    * @returns {Object} Transformed data
    */
   transformDashboardData(rawData) {
-    console.log('📊 Raw data dari API:', rawData);
-    
     if (!rawData) {
-      console.warn('⚠️ rawData is null or undefined');
       return {
         stats: { totalDosen: 0, totalPublikasi: 0, totalSitasi: 0, tahunTerakhir: new Date().getFullYear() },
         trendData: { labels: [], values: [] },
@@ -76,9 +88,6 @@ export const dashboardAPI = {
         labels: rawData.top_dosen_publikasi.map(item => item.nama_dosen || 'Unknown'),
         values: rawData.top_dosen_publikasi.map(item => item.publications_count || 0)
       };
-      console.log('✅ programStudiData transformed:', programStudiData);
-    } else {
-      console.warn('⚠️ top_dosen_publikasi is empty or not array:', rawData.top_dosen_publikasi);
     }
 
     // Transform sitasi data dari top_dosen_sitasi
@@ -92,12 +101,7 @@ export const dashboardAPI = {
         labels: rawData.top_dosen_sitasi.map(item => item.nama_dosen || 'Unknown'),
         values: rawData.top_dosen_sitasi.map(item => item.total_sitasi || 0)
       };
-      console.log('✅ sitasiData transformed:', sitasiData);
-    } else {
-      console.warn('⚠️ top_dosen_sitasi is empty or not array:', rawData.top_dosen_sitasi);
     }
-
-    console.log('📈 Transformed data:', { programStudiData, sitasiData, trendData });
 
     // Generate insights berdasarkan data
     const topDosenPubCount = rawData.top_dosen_publikasi?.[0]?.publications_count || 0;
