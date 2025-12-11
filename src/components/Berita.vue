@@ -33,12 +33,14 @@
           <span class="berita-badge" :class="getBadgeClass(berita.tags)">
             {{ getBadgeLabel(berita.tags) }}
           </span>
-          <span class="berita-count">20 items</span>
         </div>
         <h2 class="berita-card-title">{{ berita.judul }}</h2>
         <p class="berita-card-description">{{ berita.deskripsi_singkat }}</p>
         <div class="berita-footer">
-          <span class="berita-time">{{ formatTimeAgo(berita.created_at) }}</span>
+          <span class="berita-time">
+            <img src="/public/logo_jam.png" alt="jam" class="berita-time-icon">
+            {{ formatTimeAgo(berita.created_at) }}
+          </span>
           <span class="berita-date">{{ formatDate(berita.created_at) }}</span>
         </div>
       </div>
@@ -249,12 +251,6 @@ onMounted(() => {
   background: #6b7280;
 }
 
-.berita-count {
-  font-size: 12px;
-  color: #95a5a6;
-  margin-left: auto;
-}
-
 .berita-card-title {
   font-size: 20px;
   font-weight: 700;
@@ -287,8 +283,10 @@ onMounted(() => {
   font-weight: 500;
 }
 
-.berita-time::before {
-  content: '⏱️';
+.berita-time-icon {
+  width: 16px;
+  height: auto;
+  object-fit: contain;
 }
 
 .berita-date {

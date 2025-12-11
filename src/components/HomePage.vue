@@ -105,11 +105,11 @@
           <div class="chart-container">
             <canvas ref="trendChart" style="max-height: 250px;"></canvas>
           </div>
-          <router-link to="/data-publikasi" class="lihat-btn">LIHAT DATA PUBLIKASI</router-link>
+          <router-link to="/analisis" class="lihat-btn">LIHAT ANALISIS</router-link>
         </div>
 
         <!-- Chart 2: Top Dosen by Publikasi -->
-        <div class="rekap-card stats-card-dark">
+        <div class="rekap-card2 stats-card-dark">
           <h3>5 DOSEN DENGAN PUBLIKASI TERBANYAK</h3>
           <ul class="top-list">
             <li v-for="(dosen, idx) in topDosenPublikasi" :key="idx">
@@ -121,7 +121,7 @@
         </div>
 
         <!-- Chart 3: Top Dosen by Sitasi -->
-        <div class="rekap-card stats-card-dark">
+        <div class="rekap-card2 stats-card-dark">
           <h3>5 DOSEN DENGAN SITASI TERBANYAK</h3>
           <ul class="top-list">
             <li v-for="(dosen, idx) in topDosenSitasi" :key="idx">
@@ -140,12 +140,12 @@
       <div class="contact-card">
         <div class="contact-info">
           <div class="contact-item">
-            <span class="icon">💬</span>
+            <img src="/public/logo_whatsapp.png" alt="logo WA" class="icon">
             <span class="text">+6234567890</span>
           </div>
           <div class="contact-item">
-            <span class="icon">📧</span>
-            <span class="text">scholartrack@gmail.com</span>
+            <img src="/public/logo_gmail.png" alt="Logo Gmail" class="icon2">
+            <span class="text2">scholartrack@gmail.com</span>
           </div>
         </div>
         <div class="contact-map">
@@ -488,7 +488,7 @@ onMounted(async () => {
 }
 
 .about-card {
-  max-width: 900px;
+  max-width: 1000px;
   margin: 0 auto;
   background-color: white;
   padding: 2.5rem;
@@ -527,18 +527,18 @@ onMounted(async () => {
   font-size: 1.8rem;
   color: #000;
   margin-bottom: 2rem;
-  max-width: 1200px;
+  max-width: 1400px;
   margin-left: auto;
   margin-right: auto;
   font-weight: 700;
 }
 
 .berita-carousel {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 3rem;
   position: relative;
 }
 
@@ -575,10 +575,15 @@ onMounted(async () => {
   padding: 1.5rem;
   border-radius: 10px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 .berita-tag {
-  display: inline-block;
+  display: inline-flex;
   padding: 0.4rem 0.8rem;
   background-color: #ffc107;
   color: white;
@@ -586,6 +591,7 @@ onMounted(async () => {
   font-size: 0.8rem;
   font-weight: 600;
   margin-bottom: 0.8rem;
+  justify-content: center;
 }
 
 .berita-card h3 {
@@ -604,10 +610,10 @@ onMounted(async () => {
 
 .see-all {
   text-align: right;
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 2rem auto 0;
   color: #999;
-  font-size: 0.95rem;
+  font-size: 1.2rem;
   cursor: pointer;
   display: block;
   text-decoration: none;
@@ -619,13 +625,13 @@ onMounted(async () => {
 
 /* ========== REKAP SECTION ========== */
 .rekap-section {
-  padding: 3rem 2rem;
+  padding: 2rem 1rem;
   background-color: #ebf2f7;
 }
 
 .rekap-section h2 {
-  max-width: 1200px;
-  margin: 0 auto 2.5rem;
+  max-width: 1400px;
+  margin: 0 auto 1.5rem;
   font-size: 1.8rem;
   color: #000;
   font-weight: 700;
@@ -633,25 +639,41 @@ onMounted(async () => {
 }
 
 .rekap-grid {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 2rem;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+  overflow-x: hidden;
+}
+
+.rekap-grid .rekap-card {
+  grid-column: 1 / -1;
 }
 
 .rekap-card {
   background-color: white;
-  padding: 2rem;
+  padding: 1.25rem;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border: 2px solid #f0f0f0;
+  box-sizing: border-box;
+}
+
+.rekap-card2 {
+  background-color: white;
+  padding: 1.25rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 2px solid #f0f0f0;
+  overflow-x: hidden;
+  box-sizing: border-box;
 }
 
 .rekap-card h3 {
   font-size: 1.1rem;
   color: #000;
-  margin-bottom: 1.5rem;
   font-weight: 700;
 }
 
@@ -660,16 +682,18 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
 }
 
 .chart-container {
   position: relative;
-  height: 250px;
-  margin-bottom: 1.5rem;
-  padding: 1rem;
+  width: 100%;
+  height: 300px;
+  padding: 0.5rem;
   background-color: #f9f9f9;
   border-radius: 8px;
+  box-sizing: border-box;
+  margin-bottom: 1rem;
 }
 
 .loading-message {
@@ -677,6 +701,12 @@ onMounted(async () => {
   padding: 3rem 2rem;
   font-size: 1.1rem;
   color: #666;
+}
+
+canvas {
+  max-width: 100%;
+  height: auto;
+  display: block;
 }
 
 .simple-chart {
@@ -738,9 +768,10 @@ onMounted(async () => {
 .top-list li {
   display: flex;
   justify-content: space-between;
-  padding: 0.8rem 0;
+  padding: 0.7rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
   font-size: 0.95rem;
+  min-width: 0;
 }
 
 .top-list li:last-child {
@@ -755,6 +786,10 @@ onMounted(async () => {
 .name {
   flex: 1;
   padding: 0 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .count {
@@ -789,7 +824,7 @@ onMounted(async () => {
 }
 
 .contact-section h2 {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto 2rem;
   font-size: 1.8rem;
   color: #000;
@@ -797,7 +832,7 @@ onMounted(async () => {
 }
 
 .contact-card {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   background-color: white;
   padding: 2rem;
@@ -822,13 +857,28 @@ onMounted(async () => {
 }
 
 .icon {
-  font-size: 1.8rem;
+  width: 3rem;
+  height: auto;
+  object-fit: contain;
+}
+
+.icon2 {
+  width: 2.5rem;
+  height: auto;
+  object-fit: contain;
 }
 
 .text {
-  font-size: 1rem;
+  font-size: 1.5rem;
   color: #333;
   font-weight: 500;
+}
+
+.text2 {
+  font-size: 1.5rem;
+  color: #333;
+  font-weight: 500;
+  margin-left: 10px;
 }
 
 .contact-map {
@@ -986,12 +1036,37 @@ onMounted(async () => {
     margin-bottom: 1.5rem;
   }
 
+  .rekap-grid {
+    grid-template-columns: 1fr;
+  }
+
   .rekap-card {
     padding: 1.5rem;
   }
 
   .rekap-card h3 {
     font-size: 1rem;
+  }
+
+  .rekap-card2 {
+    padding: 1.5rem;
+  }
+
+  .chart-container {
+    padding: 0.75rem;
+  }
+
+  .top-list li {
+    padding: 0.6rem 0;
+    font-size: 0.85rem;
+  }
+
+  .rank {
+    min-width: 25px;
+  }
+
+  .name {
+    padding: 0 0.5rem;
   }
 
   .contact-section {
@@ -1011,11 +1086,11 @@ onMounted(async () => {
     gap: 0.8rem;
   }
 
-  .icon {
+  .icon, .icon2 {
     font-size: 1.5rem;
   }
 
-  .text {
+  .text, .text2 {
     font-size: 0.9rem;
   }
 
@@ -1081,6 +1156,32 @@ onMounted(async () => {
 
   .rekap-card {
     padding: 1rem;
+  }
+
+  .rekap-card2 {
+    padding: 1rem;
+  }
+
+  .chart-container {
+    padding: 0.5rem;
+  }
+
+  .top-list li {
+    padding: 0.5rem 0;
+    font-size: 0.75rem;
+  }
+
+  .rank {
+    min-width: 20px;
+  }
+
+  .name {
+    padding: 0 0.25rem;
+    font-size: 0.7rem;
+  }
+
+  .count {
+    font-size: 0.75rem;
   }
 
   .wordcloud-placeholder {
